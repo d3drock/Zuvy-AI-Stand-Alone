@@ -1,0 +1,287 @@
+/* Import Google Fonts for Neural Nexus Design System */
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100;200;300;400;500;600;700;800;900&family=Manrope:wght@200;300;400;500;600;700;800&family=Fira+Code:wght@300;400;500;600;700&display=swap");
+
+@import "tailwindcss/preflight";
+@tailwind utilities;
+
+/* Neural Nexus Design System Color Definitions */
+@layer base {
+  :root {
+    /* Base Colors - Light Mode */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    /* Card and Surface Colors - Light Mode */
+    --card: 224 30% 97%;
+    --card-light: 224 25% 98.5%;
+    --card-elevated: 224 40% 95.5%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    /* Primary Brand Colors - Light Mode */
+    --primary: 224 71% 56%;
+    --primary-light: 224 71% 95%;
+    --primary-dark: 224 71% 36%;
+    --primary-foreground: 210 20% 98%;
+
+    /* Secondary Brand Colors - Light Mode */
+    --secondary: 25 85% 55%;
+    --secondary-light: 25 85% 95%;
+    --secondary-dark: 25 85% 35%;
+    --secondary-foreground: 210 20% 98%;
+
+    /* Accent Colors - Light Mode */
+    --accent: 198 80% 50%;
+    --accent-light: 198 80% 95%;
+    --accent-dark: 198 80% 30%;
+    --accent-foreground: 210 20% 98%;
+
+    /* Muted Colors - Light Mode */
+    --muted: 210 40% 96%;
+    --muted-light: 210 40% 98%;
+    --muted-dark: 210 40% 90%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    /* Semantic Colors - Light Mode */
+    --success: 160 84.1% 39.4%;
+    --success-light: 160 84.1% 95%;
+    --success-dark: 160 84.1% 19.4%;
+    --success-foreground: 210 20% 98%;
+
+    --warning: 45.4 93.4% 47.5%;
+    --warning-light: 45.4 93.4% 95%;
+    --warning-dark: 45.4 93.4% 27.5%;
+    --warning-foreground: 222.2 84% 4.9%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-light: 0 84.2% 95%;
+    --destructive-dark: 0 84.2% 40.2%;
+    --destructive-foreground: 210 20% 98%;
+
+    --info: 198 80% 50%;
+    --info-light: 198 80% 95%;
+    --info-dark: 198 80% 30%;
+    --info-foreground: 210 20% 98%;
+
+    /* Border and Input Colors - Light Mode */
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 224 71% 56%;
+
+    /* Popover */
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+
+    /* Sidebar */
+    --sidebar-background: 224 30% 97%;
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-primary: 224 71% 56%;
+    --sidebar-primary-foreground: 210 20% 98%;
+    --sidebar-accent: 224 25% 98.5%;
+    --sidebar-accent-foreground: 222.2 84% 4.9%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 224 71% 56%;
+  }
+
+  .dark {
+    /* Base Colors - Dark Mode */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 20% 98%;
+
+    /* Card and Surface Colors - Dark Mode */
+    --card: 224 15% 7%;
+    --card-light: 224 15% 6%;
+    --card-elevated: 224 15% 8%;
+    --card-foreground: 210 20% 98%;
+
+    /* Primary Brand Colors - Dark Mode */
+    --primary: 224 75% 65%;
+    --primary-light: 224 71% 20%;
+    --primary-dark: 224 71% 48%;
+    --primary-foreground: 210 20% 98%;
+
+    /* Secondary Brand Colors - Dark Mode */
+    --secondary: 25 90% 63%;
+    --secondary-light: 25 85% 20%;
+    --secondary-dark: 25 85% 47%;
+    --secondary-foreground: 222.2 84% 4.9%;
+
+    /* Accent Colors - Dark Mode */
+    --accent: 198 85% 58%;
+    --accent-light: 198 80% 20%;
+    --accent-dark: 198 80% 42%;
+    --accent-foreground: 222.2 84% 4.9%;
+
+    /* Muted Colors - Dark Mode */
+    --muted: 217.2 32.6% 17.5%;
+    --muted-light: 217.2 32.6% 22.5%;
+    --muted-dark: 217.2 32.6% 12.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    /* Semantic Colors - Dark Mode */
+    --success: 160 84.1% 45%;
+    --success-light: 160 84.1% 20%;
+    --success-dark: 160 84.1% 30%;
+    --success-foreground: 222.2 84% 4.9%;
+
+    --warning: 45.4 93.4% 55%;
+    --warning-light: 45.4 93.4% 20%;
+    --warning-dark: 45.4 93.4% 40%;
+    --warning-foreground: 222.2 84% 4.9%;
+
+    --destructive: 0 62.8% 50%;
+    --destructive-light: 0 62.8% 20%;
+    --destructive-dark: 0 62.8% 35%;
+    --destructive-foreground: 210 20% 98%;
+
+    --info: 198 85% 58%;
+    --info-light: 198 80% 20%;
+    --info-dark: 198 80% 42%;
+    --info-foreground: 222.2 84% 4.9%;
+
+    /* Border and Input Colors - Dark Mode */
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224 75% 65%;
+
+    /* Popover */
+    --popover: 224 15% 7%;
+    --popover-foreground: 210 20% 98%;
+
+    /* Sidebar */
+    --sidebar-background: 224 15% 7%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-primary: 224 75% 65%;
+    --sidebar-primary-foreground: 210 20% 98%;
+    --sidebar-accent: 224 15% 8%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 224 75% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Typography System */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading;
+  }
+
+  h1 {
+    @apply text-6xl leading-tight;
+  }
+
+  h2 {
+    @apply text-4xl leading-tight;
+  }
+
+  h3 {
+    @apply text-3xl leading-tight;
+  }
+
+  h4 {
+    @apply text-2xl leading-tight;
+  }
+
+  h5 {
+    @apply text-xl leading-tight;
+  }
+
+  h6 {
+    @apply text-lg leading-tight;
+  }
+
+  p,
+  span,
+  div {
+    @apply leading-relaxed;
+  }
+
+  code {
+    @apply font-mono;
+  }
+
+  /* Mobile Typography */
+  @media (max-width: 768px) {
+    h1 {
+      @apply text-5xl;
+    }
+    h2 {
+      @apply text-4xl;
+    }
+    h3 {
+      @apply text-3xl;
+    }
+    h4 {
+      @apply text-2xl;
+    }
+    h5 {
+      @apply text-xl;
+    }
+    h6 {
+      @apply text-lg;
+    }
+
+    body {
+      font-size: 16px;
+    }
+  }
+}
+
+/* Custom Neural Nexus shadows */
+@layer utilities {
+  .shadow-2dp {
+    box-shadow: 0 1px 3px 0 rgba(79, 109, 207, 0.1),
+      0 1px 2px 0 rgba(79, 109, 207, 0.06);
+  }
+
+  .shadow-4dp {
+    box-shadow: 0 2px 4px -1px rgba(79, 109, 207, 0.1),
+      0 1px 2px -1px rgba(79, 109, 207, 0.06);
+  }
+
+  .shadow-8dp {
+    box-shadow: 0 4px 6px -1px rgba(79, 109, 207, 0.1),
+      0 2px 4px -2px rgba(79, 109, 207, 0.1);
+  }
+
+  .shadow-16dp {
+    box-shadow: 0 10px 15px -3px rgba(79, 109, 207, 0.1),
+      0 4px 6px -4px rgba(79, 109, 207, 0.1);
+  }
+
+  .shadow-24dp {
+    box-shadow: 0 20px 25px -5px rgba(79, 109, 207, 0.1),
+      0 8px 10px -6px rgba(79, 109, 207, 0.1);
+  }
+
+  .shadow-32dp {
+    box-shadow: 0 25px 50px -12px rgba(79, 109, 207, 0.25);
+  }
+
+  .shadow-hover {
+    box-shadow: 0 8px 25px -8px rgba(79, 109, 207, 0.15);
+  }
+
+  .shadow-focus {
+    box-shadow: 0 0 0 2px rgba(79, 109, 207, 0.2);
+  }
+
+  .shadow-pressed {
+    box-shadow: 0 1px 3px 0 rgba(79, 109, 207, 0.2);
+  }
+}
