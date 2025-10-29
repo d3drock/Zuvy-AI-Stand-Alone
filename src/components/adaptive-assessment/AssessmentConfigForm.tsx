@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -17,72 +16,156 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { AssessmentConfiguration } from '@/types/adaptive-assessment';
+import { api } from '@/utils/axios.config';
+
+// Available topics for the assessment
+const AVAILABLE_TOPICS = [
+  'Arrays',
+  'Loops',
+  'Objects',
+  'Functions',
+  'Promises',
+  'Async/Await',
+  'DOM Manipulation',
+  'Event Handling',
+  'Closures',
+  'Prototypes',
+  'ES6 Features',
+  'Data Structures',
+  'Algorithms',
+  'Sorting',
+  'Searching',
+  'Trees',
+  'Graphs',
+  'Linked Lists',
+  'Stacks',
+  'Queues',
+  'Recursion',
+  'Dynamic Programming',
+  'Hash Tables',
+  'Binary Search',
+  'String Manipulation',
+  'OOP Concepts',
+  'Design Patterns',
+];
+
+interface TopicWithCount {
+  topic: string;
+  count: number;
+}
+
+interface AssessmentFormData {
+  title: string;
+  description: string;
+  difficulty: string;
+  topics: TopicWithCount[];
+  audience: string;
+}
 
 interface AssessmentConfigFormProps {
-  config?: AssessmentConfiguration;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (config: Partial<AssessmentConfiguration>) => void;
+  onSave: (config: any) => void;
   mode: 'create' | 'edit';
-  availableTopics: string[];
 }
 
 export function AssessmentConfigForm({
-  config,
   open,
   onOpenChange,
   onSave,
   mode,
-  availableTopics,
 }: AssessmentConfigFormProps) {
-  const [formData, setFormData] = useState<Partial<AssessmentConfiguration>>(
-    config || {
-      title: '',
-      description: '',
-      totalQuestions: 15,
-      timeLimit: 30,
-      topics: [],
-      passingScore: 60,
-      allowRetry: true,
-      retryDelay: 24,
-      showFeedback: true,
-      randomizeOptions: true,
-    }
-  );
+  const [formData, setFormData] = useState<AssessmentFormData>({
+    title: '',
+    description: '',
+    difficulty: 'Medium',
+    topics: [],
+    audience: '',
+  });
 
   const [newTopic, setNewTopic] = useState('');
+  const [newTopicCount, setNewTopicCount] = useState<number>(1);
 
-  const handleInputChange = (field: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleTitleChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, title: value }));
   };
 
-  const addTopic = (topic: string) => {
-    if (topic && !formData.topics?.includes(topic)) {
-      setFormData((prev) => ({
-        ...prev,
-        topics: [...(prev.topics || []), topic],
-      }));
-      setNewTopic('');
+  const handleDescriptionChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, description: value }));
+  };
+
+  const handleDifficultyChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, difficulty: value }));
+  };
+
+  const handleAudienceChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, audience: value }));
+  };
+
+  const [loading, setLoading] = useState(false);
+
+  const addTopic = () => {
+    if (newTopic && newTopicCount > 0) {
+      const topicExists = formData.topics.find((t) => t.topic === newTopic);
+      if (!topicExists) {
+        setFormData((prev) => ({
+          ...prev,
+          topics: [...prev.topics, { topic: newTopic, count: newTopicCount }],
+        }));
+        setNewTopic('');
+        setNewTopicCount(1);
+      }
     }
   };
 
-  const removeTopic = (topic: string) => {
+  const removeTopic = (topicToRemove: string) => {
     setFormData((prev) => ({
       ...prev,
-      topics: prev.topics?.filter((t) => t !== topic) || [],
+      topics: prev.topics.filter((t) => t.topic !== topicToRemove),
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    // Transform topics array to object format
+    const topicsObject: { [key: string]: number } = {};
+    formData.topics.forEach((t) => {
+      topicsObject[t.topic] = t.count;
+    });
+
     const dataToSave = {
-      ...formData,
-      createdAt: formData.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      bootcampid: 803,
+      title: formData.title,
+      description: formData.description,
+      difficulty: formData.difficulty,
+      topics: topicsObject,
+      audience: formData.audience,
     };
-    onSave(dataToSave);
+
+    setLoading(true);
+    try {
+      await api.post('/content/generate-mcqs', dataToSave);
+      setLoading(false);
+    }
+    catch(error){
+      setLoading(false);
+      console.error('Error saving assessment config:', error);
+    }
+
+    // onSave(dataToSave);
     onOpenChange(false);
+    setFormData({
+      title: '',
+      description: '',
+      difficulty: 'Medium',
+      topics: [],
+      audience: '',
+    });
   };
+
+  const selectedTopicNames = formData.topics.map((t) => t.topic);
+  const availableTopicsFiltered = AVAILABLE_TOPICS.filter(
+    (t) => !selectedTopicNames.includes(t)
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -92,36 +175,49 @@ export function AssessmentConfigForm({
             {mode === 'create' ? 'Create Assessment' : 'Edit Assessment'}
           </DialogTitle>
           <DialogDescription>
-            Configure the assessment settings and select topics to test
+            Configure the assessment settings for bootcamp
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Basic Info */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Assessment Title *</Label>
-              <Input
-                placeholder="e.g., JavaScript Fundamentals Assessment"
-                value={formData.title}
-                onChange={(e) => handleInputChange('title', e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea
-                placeholder="Brief description of what this assessment covers..."
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                rows={3}
-              />
-            </div>
+          {/* Title */}
+          <div className="space-y-2">
+            <Label>Assessment Title *</Label>
+            <Input
+              placeholder="e.g., JavaScript Fundamentals Assessment"
+              value={formData.title}
+              onChange={(e) => handleTitleChange(e.target.value)}
+            />
           </div>
 
-          {/* Topics */}
+          {/* Description */}
+          <div className="space-y-2">
+            <Label>Description</Label>
+            <Textarea
+              placeholder="Brief description of what this assessment covers..."
+              value={formData.description}
+              onChange={(e) => handleDescriptionChange(e.target.value)}
+              rows={3}
+            />
+          </div>
+
+          {/* Difficulty Selection */}
+          <div className="space-y-2">
+            <Label>Difficulty Level *</Label>
+            <select
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={formData.difficulty}
+              onChange={(e) => handleDifficultyChange(e.target.value)}
+            >
+              <option value="Easy">Easy</option>
+              <option value="Medium">Medium</option>
+              <option value="Hard">Hard</option>
+            </select>
+          </div>
+
+          {/* Topics with Question Count */}
           <Card className="p-4 bg-muted/50">
-            <Label className="mb-3 block">Topics to Test *</Label>
+            <Label className="mb-3 block">Topics with Question Count *</Label>
             <div className="space-y-3">
               <div className="flex gap-2">
                 <select
@@ -130,17 +226,24 @@ export function AssessmentConfigForm({
                   onChange={(e) => setNewTopic(e.target.value)}
                 >
                   <option value="">Select a topic...</option>
-                  {availableTopics
-                    .filter((t) => !formData.topics?.includes(t))
-                    .map((topic) => (
-                      <option key={topic} value={topic}>
-                        {topic}
-                      </option>
-                    ))}
+                  {availableTopicsFiltered.map((topic) => (
+                    <option key={topic} value={topic}>
+                      {topic}
+                    </option>
+                  ))}
                 </select>
+                <Input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={newTopicCount}
+                  onChange={(e) => setNewTopicCount(parseInt(e.target.value) || 1)}
+                  placeholder="Count"
+                  className="w-24"
+                />
                 <Button
                   type="button"
-                  onClick={() => addTopic(newTopic)}
+                  onClick={addTopic}
                   disabled={!newTopic}
                   className="gap-2"
                 >
@@ -151,11 +254,11 @@ export function AssessmentConfigForm({
 
               {formData.topics && formData.topics.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {formData.topics.map((topic) => (
-                    <Badge key={topic} variant="secondary" className="gap-2">
-                      {topic}
+                  {formData.topics.map((topicItem) => (
+                    <Badge key={topicItem.topic} variant="secondary" className="gap-2">
+                      {topicItem.topic} ({topicItem.count} questions)
                       <button
-                        onClick={() => removeTopic(topic)}
+                        onClick={() => removeTopic(topicItem.topic)}
                         className="hover:text-destructive"
                       >
                         <X className="h-3 w-3" />
@@ -167,122 +270,21 @@ export function AssessmentConfigForm({
 
               {(!formData.topics || formData.topics.length === 0) && (
                 <p className="text-sm text-muted-foreground italic">
-                  No topics selected. Add at least one topic.
+                  No topics selected. Add at least one topic with question count.
                 </p>
               )}
             </div>
           </Card>
 
-          {/* Assessment Settings */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Total Questions</Label>
-              <Input
-                type="number"
-                min={5}
-                max={50}
-                value={formData.totalQuestions}
-                onChange={(e) =>
-                  handleInputChange('totalQuestions', parseInt(e.target.value))
-                }
-              />
-              <p className="text-xs text-muted-foreground">
-                Questions per assessment (5-50)
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Time Limit (minutes)</Label>
-              <Input
-                type="number"
-                min={10}
-                max={180}
-                value={formData.timeLimit}
-                onChange={(e) =>
-                  handleInputChange('timeLimit', parseInt(e.target.value))
-                }
-              />
-              <p className="text-xs text-muted-foreground">
-                Total time allowed (10-180 min)
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Passing Score (%)</Label>
-              <Input
-                type="number"
-                min={0}
-                max={100}
-                value={formData.passingScore}
-                onChange={(e) =>
-                  handleInputChange('passingScore', parseInt(e.target.value))
-                }
-              />
-              <p className="text-xs text-muted-foreground">
-                Minimum % to pass (0-100)
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Retry Delay (hours)</Label>
-              <Input
-                type="number"
-                min={0}
-                max={168}
-                value={formData.retryDelay}
-                onChange={(e) =>
-                  handleInputChange('retryDelay', parseInt(e.target.value))
-                }
-                disabled={!formData.allowRetry}
-              />
-              <p className="text-xs text-muted-foreground">
-                Wait time before retry (0-168 hrs)
-              </p>
-            </div>
-          </div>
-
-          {/* Switches */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-              <div>
-                <Label>Allow Retry</Label>
-                <p className="text-sm text-muted-foreground">
-                  Students can retake the assessment
-                </p>
-              </div>
-              <Switch
-                checked={formData.allowRetry}
-                onCheckedChange={(checked) => handleInputChange('allowRetry', checked)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-              <div>
-                <Label>Show Instant Feedback</Label>
-                <p className="text-sm text-muted-foreground">
-                  Display explanations after each question
-                </p>
-              </div>
-              <Switch
-                checked={formData.showFeedback}
-                onCheckedChange={(checked) => handleInputChange('showFeedback', checked)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-              <div>
-                <Label>Randomize Options</Label>
-                <p className="text-sm text-muted-foreground">
-                  Shuffle answer options for each student
-                </p>
-              </div>
-              <Switch
-                checked={formData.randomizeOptions}
-                onCheckedChange={(checked) =>
-                  handleInputChange('randomizeOptions', checked)
-                }
-              />
-            </div>
+          {/* Audience */}
+          <div className="space-y-2">
+            <Label>Audience *</Label>
+            <Textarea
+              placeholder="e.g., Assessment for AFE cohort, semester 2 and 3 CSE"
+              value={formData.audience}
+              onChange={(e) => handleAudienceChange(e.target.value)}
+              rows={3}
+            />
           </div>
 
           {/* Preview Summary */}
@@ -290,12 +292,8 @@ export function AssessmentConfigForm({
             <h4 className="font-semibold text-body2 mb-3">Assessment Summary</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Questions:</span>
-                <span className="font-medium">{formData.totalQuestions}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Time Limit:</span>
-                <span className="font-medium">{formData.timeLimit} minutes</span>
+                <span className="text-muted-foreground">Difficulty:</span>
+                <span className="font-medium">{formData.difficulty}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Topics:</span>
@@ -304,13 +302,9 @@ export function AssessmentConfigForm({
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Passing Score:</span>
-                <span className="font-medium">{formData.passingScore}%</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Estimated Duration:</span>
+                <span className="text-muted-foreground">Total Questions:</span>
                 <span className="font-medium">
-                  ~{Math.round(formData.totalQuestions! * 1.5)} min
+                  {formData.topics.reduce((sum, t) => sum + t.count, 0)}
                 </span>
               </div>
             </div>
@@ -324,10 +318,14 @@ export function AssessmentConfigForm({
           <Button
             onClick={handleSave}
             disabled={
-              !formData.title || !formData.topics || formData.topics.length === 0
+              !formData.title ||
+              !formData.difficulty ||
+              !formData.topics ||
+              formData.topics.length === 0 ||
+              !formData.audience
             }
           >
-            {mode === 'create' ? 'Create Assessment' : 'Save Changes'}
+            {!loading ? 'Create Assessment' : 'Loading...'}
           </Button>
         </DialogFooter>
       </DialogContent>
