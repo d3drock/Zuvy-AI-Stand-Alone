@@ -27,6 +27,18 @@ export default function AssessmentManagementPage() {
   >();
   const [editorMode, setEditorMode] = useState<'create' | 'edit'>('create');
 
+  // Helper function to calculate total questions from topics
+  const getTotalQuestions = (assessment: AssessmentConfiguration): number => {
+    if (assessment.totalQuestions) {
+      return assessment.totalQuestions;
+    }
+    // If topics is an object with counts, sum them up
+    if (assessment.topics && typeof assessment.topics === 'object' && !Array.isArray(assessment.topics)) {
+      return Object.values(assessment.topics).reduce((sum: number, count) => sum + Number(count), 0);
+    }
+    return 0;
+  };
+
   // Get unique topics from questions
   const availableTopics = Array.from(
     new Set(mockAdaptiveQuestions.map((q) => q.topic))
@@ -138,10 +150,12 @@ export default function AssessmentManagementPage() {
         <Card className="p-4">
           <p className="text-body2 text-muted-foreground mb-1">Avg Questions</p>
           <p className="text-h5 font-semibold">
-            {Math.round(
-              assessments.reduce((sum, a) => sum + a.totalQuestions, 0) /
-                assessments.length
-            )}
+            {assessments.length > 0
+              ? Math.round(
+                  assessments.reduce((sum, a) => sum + getTotalQuestions(a), 0) /
+                    assessments.length
+                )
+              : 0}
           </p>
         </Card>
         <Card className="p-4">
@@ -188,15 +202,15 @@ export default function AssessmentManagementPage() {
                   <div className="flex items-center gap-4 mb-3 text-body2 text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <Play className="h-4 w-4" />
-                      <span>{assessment.totalQuestions} questions</span>
+                      <span>{getTotalQuestions(assessment)} questions</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span>⏱</span>
-                      <span>{assessment.timeLimit} min</span>
+                      <span>{assessment.timeLimit || 'N/A'} min</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span>🎯</span>
-                      <span>{assessment.passingScore}% to pass</span>
+                      <span>{assessment.passingScore || 'N/A'}% to pass</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4" />
@@ -206,11 +220,19 @@ export default function AssessmentManagementPage() {
 
                   {/* Topics */}
                   <div className="flex items-center gap-2 flex-wrap mb-3">
-                    {assessment.topics.map((topic) => (
-                      <Badge key={topic} variant="outline">
-                        {topic}
-                      </Badge>
-                    ))}
+                    {assessment.topics && typeof assessment.topics === 'object' && !Array.isArray(assessment.topics) ? (
+                      Object.entries(assessment.topics).map(([topic, count]) => (
+                        <Badge key={topic} variant="outline">
+                          {topic} ({String(count)})
+                        </Badge>
+                      ))
+                    ) : Array.isArray(assessment.topics) ? (
+                      (assessment.topics as string[]).map((topic: string) => (
+                        <Badge key={topic} variant="outline">
+                          {topic}
+                        </Badge>
+                      ))
+                    ) : null}
                   </div>
 
                   {/* Settings */}
@@ -286,12 +308,10 @@ export default function AssessmentManagementPage() {
 
       {/* Assessment Config Form */}
       <AssessmentConfigForm
-        config={selectedAssessment}
         open={editorOpen}
         onOpenChange={setEditorOpen}
         onSave={handleSaveAssessment}
         mode={editorMode}
-        availableTopics={availableTopics}
       />
     </div>
   );

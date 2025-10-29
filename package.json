@@ -27,7 +27,7 @@
     "@react-oauth/google": "^0.12.2",
     "@types/recharts": "^1.8.29",
     "autoprefixer": "^10.4.21",
-    "axios": "^1.13.1",
+    "axios": "^1.13.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cookies-next": "^6.1.1",
