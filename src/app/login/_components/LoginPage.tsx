@@ -220,7 +220,7 @@ const handleGoogleSuccess = async (
                 if (userRole === 'student') {
                     router.push('/student')
                 } else {
-                    router.push(`/admin/admin-assessment-managment`)
+                    router.push(`/admin/admin-assessment-management`)
                     // router.push(`/admin/questionbank`)
                 }
             }
@@ -266,7 +266,7 @@ const handleGoogleSuccess = async (
         if(user.rolesList && user.rolesList[0] === 'student') {
             router.push('/student')
         }else if (user.rolesList && user.rolesList[0] === 'admin') {
-            router.push(`/admin/admin-assessment-managment`)
+            router.push(`/admin/admin-assessment-management`)
         }
     }, [user])
 

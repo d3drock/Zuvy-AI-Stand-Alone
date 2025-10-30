@@ -1,12 +1,20 @@
-'use client'
+"use client";
 
-import { ReactNode } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
-import { LayoutDashboard, Layers, Database, Settings, LogOut } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ReactNode } from "react";
+import axios from "axios";
+import Link from "next/link";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
+import {
+  LayoutDashboard,
+  Layers,
+  Database,
+  Settings,
+  LogOut,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/use-toast";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -14,27 +22,68 @@ interface MainLayoutProps {
 
 const MainLayout = ({ children }: MainLayoutProps) => {
   const pathname = usePathname();
-  
+
   const navigationItems = [
     {
-      name: 'Course Studio',
-      href: '/courses',
+      name: "Assessment Management",
+      href: `/admin/admin-assessment-management`,
       icon: Layers,
-      active: pathname.startsWith('/courses')
+      active: (pathname: string) =>
+        pathname === `/admin/admin-assessment-management` ||
+        pathname.startsWith(`/admin/admin-assessment-management/`),
     },
     {
-      name: 'Content Bank',
-      href: '/content-bank',
+      name: "Question Bank",
+      href: `/admin/questionbank`,
       icon: Database,
-      active: pathname.startsWith('/content-bank')
+      active: (pathname: string) =>
+        pathname === `/admin/questionbank` ||
+        pathname.startsWith(`/admin/questionbank/`),
     },
     {
-      name: 'Roles and Permissions',
-      href: '/settings',
+      name: "Analytics Dashboard",
+      href: `/admin/analytics`,
       icon: Settings,
-      active: pathname.startsWith('/settings')
-    }
+      active: (pathname: string) =>
+        pathname === `/admin/analytics` ||
+        pathname.startsWith(`/admin/analytics/`),
+    },
   ];
+
+  const Logout = async () => {
+    console.log("Logging out...");
+    const mainUrl = process.env.NEXT_PUBLIC_MAIN_URL;
+
+    try {
+      const access_token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("access_token")
+          : null;
+      await axios.post(
+        `${mainUrl}/auth/logout`, {}, {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+            Accept: "application/json",
+          },
+        }
+      );
+
+      toast.success({
+        title: "Logout Successful",
+        description: "Goodbye, See you soon!",
+      });
+
+      // Clear client-side storage and redirect
+      if (typeof window !== "undefined") {
+        localStorage.clear();
+        document.cookie =
+          "secure_typeuser=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        window.location.pathname = "/";
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -52,35 +101,40 @@ const MainLayout = ({ children }: MainLayoutProps) => {
                 priority
               />
             </Link>
-            
             <nav className="flex items-center space-x-1">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
+
+                const isActive =
+                  typeof item.active === "function"
+                    ? item.active(pathname)
+                    : item.active === pathname;
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      "flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors",
-                      item.active
-                        ? "bg-primary text-primary-foreground shadow-2dp"
-                        : "text-muted-foreground hover:text-white hover:bg-primary"
+                      "flex items-center space-x-2 px-4 py-2 rounded-lg text-[0.95rem] font-medium transition-all duration-200",
+                      isActive
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground hover:bg-gray-100"
                     )}
                   >
                     <Icon className="h-4 w-4" />
-                    <span>{item.name}</span>
+                    <span className="">{item.name}</span>
                   </Link>
                 );
               })}
             </nav>
           </div>
-          
+
           <Button
             variant="ghost"
             size="icon"
             className="ml-auto text-red-500 hover:text-white hover:bg-red-500"
             title="Logout"
             aria-label="Logout"
+            onClick={Logout}
           >
             <LogOut className="h-5 w-5" />
           </Button>
@@ -88,9 +142,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1">
-        {children}
-      </main>
+      <main className="flex-1">{children}</main>
     </div>
   );
 };
