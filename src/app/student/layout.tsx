@@ -16,13 +16,13 @@ export default function RootLayout({
   const roleFromPath = pathname.split("/")[1]?.toLowerCase() || "";
   const userRole = user?.rolesList?.[0]?.toLowerCase() || "";
 
-  if(!(pathname.startsWith('/admin') && userRole === 'admin' )) {
+  if(!(pathname.startsWith('/student') && userRole === 'student' )) {
     return <UnauthorizedPage />
   }
 
   return (
     <div className="font-body">
-      <MainLayout>{children}</MainLayout>
+      {children}
     </div>
   );
 }

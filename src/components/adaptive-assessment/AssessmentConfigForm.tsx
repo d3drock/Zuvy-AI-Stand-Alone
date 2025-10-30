@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { api } from '@/utils/axios.config';
+import { useBootcamp } from '@/lib/hooks/useBootcamp';
 
 // Available topics for the assessment
 const AVAILABLE_TOPICS = [
@@ -60,6 +61,7 @@ interface AssessmentFormData {
   difficulty: string;
   topics: TopicWithCount[];
   audience: string;
+  bootcampId: number | null;
 }
 
 interface AssessmentConfigFormProps {
@@ -81,7 +83,12 @@ export function AssessmentConfigForm({
     difficulty: 'Medium',
     topics: [],
     audience: '',
+    bootcampId: null,
   });
+    const { bootcamps } = useBootcamp();
+
+    console.log(bootcamps)
+
 
   const [newTopic, setNewTopic] = useState('');
   const [newTopicCount, setNewTopicCount] = useState<number>(1);
@@ -100,6 +107,10 @@ export function AssessmentConfigForm({
 
   const handleAudienceChange = (value: string) => {
     setFormData((prev) => ({ ...prev, audience: value }));
+  };
+
+  const handleBootcampChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, bootcampId: value ? parseInt(value) : null }));
   };
 
   const [loading, setLoading] = useState(false);
@@ -133,7 +144,7 @@ export function AssessmentConfigForm({
     });
 
     const dataToSave = {
-      bootcampid: 803,
+      bootcampid: formData.bootcampId,
       title: formData.title,
       description: formData.description,
       difficulty: formData.difficulty,
@@ -141,9 +152,11 @@ export function AssessmentConfigForm({
       audience: formData.audience,
     };
 
+    console.log(dataToSave)
+
     setLoading(true);
     try {
-      await api.post('/content/generate-mcqs', dataToSave);
+      // await api.post('/content/generate-mcqs', dataToSave);
       setLoading(false);
     }
     catch(error){
@@ -159,6 +172,7 @@ export function AssessmentConfigForm({
       difficulty: 'Medium',
       topics: [],
       audience: '',
+      bootcampId: null,
     });
   };
 
@@ -166,6 +180,8 @@ export function AssessmentConfigForm({
   const availableTopicsFiltered = AVAILABLE_TOPICS.filter(
     (t) => !selectedTopicNames.includes(t)
   );
+
+  console.log(bootcamps)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -199,6 +215,23 @@ export function AssessmentConfigForm({
               onChange={(e) => handleDescriptionChange(e.target.value)}
               rows={3}
             />
+          </div>
+
+          {/* Bootcamp Selection */}
+          <div className="space-y-2">
+            <Label>Bootcamp *</Label>
+            <select
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={formData.bootcampId || ''}
+              onChange={(e) => handleBootcampChange(e.target.value)}
+            >
+              <option value="">Select a bootcamp...</option>
+              {bootcamps.map((bootcamp) => (
+                <option key={bootcamp.id} value={bootcamp.id}>
+                  {bootcamp.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Difficulty Selection */}
@@ -319,6 +352,7 @@ export function AssessmentConfigForm({
             onClick={handleSave}
             disabled={
               !formData.title ||
+              !formData.bootcampId ||
               !formData.difficulty ||
               !formData.topics ||
               formData.topics.length === 0 ||

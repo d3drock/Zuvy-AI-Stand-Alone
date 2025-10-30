@@ -1,11 +1,22 @@
 'use client'
 
 import axios, { AxiosRequestConfig } from 'axios'
+import { createRoot } from 'react-dom/client'
+// import { SessionExpiredModal } from '../components/SessionExpiredModal'
+import { toast } from '@/components/ui/use-toast'
+// import { useSessionModal } from '@/store/store'
+// // import { store as sessionModalStore } from '@/store/store'
+// import { sessionModalStore } from '@/store/store'
+import { useSessionModalStore } from '@/store/session.store'
+
+const sessionModalStore = useSessionModalStore.getState()
 
 let mainUrl = process.env.NEXT_PUBLIC_MAIN_URL
 
 // const mainUrl = "http://zuvy.navgurukul.org/"
 // const mainUrl = "https://main-api.zuvy.org"
+const apiURL = process.env.NEXT_PUBLIC_API_URL
+const localUrl = process.env.NEXT_PUBLIC_LOCAL_URL
 // const env_name = process.env.NODE_ENV
 
 // const access_token = localStorage.getItem('access_token')
@@ -32,9 +43,7 @@ if (typeof window !== 'undefined') {
         // if (token) {
         //     config.headers.Authorization = `Bearer ${token}`
         // }
-        const access_token = process.env.NEXT_PUBLIC_ADMIN_TOKEN;
-        console.log("Access Token:", access_token);
-        // const access_token = localStorage.getItem('access_token')
+        const access_token = localStorage.getItem('access_token')
         if (access_token) {
             config.headers.Authorization = `Bearer ${access_token}`
         }
@@ -42,104 +51,108 @@ if (typeof window !== 'undefined') {
     })
 }
 
-// apiMeraki.interceptors.request.use((config) => {
-//     // const token = localStorage.getItem('token')
-//     // if (token) {
-//     //     config.headers.Authorization = `Bearer ${token}`
-//     // }
-//     const access_token = process.env.ADMIN_TOKEN;
-//     // const access_token = localStorage.getItem('access_token')
-//     if (access_token) {
-//         config.headers.Authorization = `Bearer ${access_token}`
-//     }
-//     return config
-// })
+const apiMeraki = axios.create({
+    baseURL: apiURL,
+    headers,
+})
 
-// type FailedRequest = {
-//     resolve: (access_token: string) => void
-//     reject: (error: any) => void
-// }
+apiMeraki.interceptors.request.use((config) => {
+    // const token = localStorage.getItem('token')
+    // if (token) {
+    //     config.headers.Authorization = `Bearer ${token}`
+    // }
+    const access_token = localStorage.getItem('access_token')
+    if (access_token) {
+        config.headers.Authorization = `Bearer ${access_token}`
+    }
+    return config
+})
 
-// let isRefreshing = false
-// let failedQueue: FailedRequest[] = []
+type FailedRequest = {
+    resolve: (access_token: string) => void
+    reject: (error: any) => void
+}
 
-// const processQueue = (error: unknown, access_token = null) => {
-//     failedQueue.forEach((prom) => {
-//         if (error) {
-//             prom.reject(error)
-//         } else {
-//             access_token && prom.resolve(access_token)
-//         }
-//     })
+let isRefreshing = false
+let failedQueue: FailedRequest[] = []
 
-//     failedQueue = []
-// }
+const processQueue = (error: unknown, access_token = null) => {
+    failedQueue.forEach((prom) => {
+        if (error) {
+            prom.reject(error)
+        } else {
+            access_token && prom.resolve(access_token)
+        }
+    })
 
-// api.interceptors.response.use(
-//     (response) => response,
-//     async (error) => {
-//         const originalRequest = error.config
+    failedQueue = []
+}
 
-//           // :no_entry_sign: Skip token refresh if on login route or calling login/refresh endpoints
-//         const isLoginOrRefresh =
-//             originalRequest.url.includes('/auth/login') ||
-//             originalRequest.url.includes('/auth/refresh')
+api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const originalRequest = error.config
 
-//         if (isLoginOrRefresh) {
-//             return Promise.reject(error)
-//         }
+          // :no_entry_sign: Skip token refresh if on login route or calling login/refresh endpoints
+        const isLoginOrRefresh =
+            originalRequest.url.includes('/auth/login') ||
+            originalRequest.url.includes('/auth/refresh')
 
-//         if (error.response?.status === 401 && !originalRequest._retry) {
-//             if (isRefreshing) {
-//                 return new Promise((resolve, reject) => {
-//                     failedQueue.push({ resolve, reject })
-//                 })
-//                     .then((access_token) => {
-//                         originalRequest.headers.Authorization = `Bearer ${access_token}`
-//                         return api(originalRequest)
-//                     })
-//                     .catch((err) => Promise.reject(err))
-//             }
+        if (isLoginOrRefresh) {
+            return Promise.reject(error)
+        }
 
-//             originalRequest._retry = true
-//             isRefreshing = true
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            if (isRefreshing) {
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({ resolve, reject })
+                })
+                    .then((access_token) => {
+                        originalRequest.headers.Authorization = `Bearer ${access_token}`
+                        return api(originalRequest)
+                    })
+                    .catch((err) => Promise.reject(err))
+            }
 
-//             try {
-//                 const refresh_token = localStorage.getItem('refresh_token')
-//                 const response = await axios.post(`${mainUrl}/auth/refresh`, {
-//                     refresh_token,
-//                 })
+            originalRequest._retry = true
+            isRefreshing = true
 
-//                 const newAccessToken = response.data.access_token
-//                 localStorage.setItem('access_token', newAccessToken)
-//                 localStorage.setItem(
-//                     'refresh_token',
-//                     response?.data?.refresh_token
-//                 )
+            try {
+                const refresh_token = localStorage.getItem('refresh_token')
+                const response = await axios.post(`${mainUrl}/auth/refresh`, {
+                    refresh_token,
+                })
 
-//                 api.defaults.headers.common[
-//                     'Authorization'
-//                 ] = `Bearer ${newAccessToken}`
-//                 processQueue(null, newAccessToken)
-//                 return api(originalRequest)
-//             } catch (err) {
-//                 processQueue(err, null)
-//                 // localStorage.clear()
-//                 // document.cookie =
-//                 //     'secure_typeuser=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+                const newAccessToken = response.data.access_token
+                localStorage.setItem('access_token', newAccessToken)
+                localStorage.setItem(
+                    'refresh_token',
+                    response?.data?.refresh_token
+                )
 
-//                 sessionModalStore.setShowModal(true)
+                api.defaults.headers.common[
+                    'Authorization'
+                ] = `Bearer ${newAccessToken}`
+                processQueue(null, newAccessToken)
+                return api(originalRequest)
+            } catch (err) {
+                processQueue(err, null)
+                // localStorage.clear()
+                // document.cookie =
+                //     'secure_typeuser=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
 
-//                 return Promise.reject(err)
-//             } finally {
-//                 isRefreshing = false
-//             }
-//         }
+                sessionModalStore.setShowModal(true)
 
-//         // Suppress default error toast by returning a handled error object
-//         // return Promise.reject({ ...error, __handled: true })
-//         return Promise.reject(error)
-//     }
-// )
+                return Promise.reject(err)
+            } finally {
+                isRefreshing = false
+            }
+        }
 
-export { api }
+        // Suppress default error toast by returning a handled error object
+        // return Promise.reject({ ...error, __handled: true })
+        return Promise.reject(error)
+    }
+)
+
+export { api, apiMeraki }
