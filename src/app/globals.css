@@ -10,6 +10,8 @@
 /* ✅ Base layer styles */
 @layer base {
   :root {
+    /* Typography */
+    --font-heading: "Rajdhani", sans-serif;
     --radius: 0.5rem;
     /* Base Colors - Light Mode */
     --background: 48 30% 95%;
@@ -158,6 +160,10 @@
   }
   h6 {
     font-size: 1.3125rem;
+  }
+
+  .font-heading {
+    font-family: var(--font-heading);
   }
 
   body,
