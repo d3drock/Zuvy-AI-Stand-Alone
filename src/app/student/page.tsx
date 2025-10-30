@@ -1,14 +1,15 @@
-import React from 'react'
-import StudentDashboard from '../_components/StudentDashBoard'
+import React from "react";
+import StudentDashboard from "../_components/StudentDashBoard";
+import MainLayout from "@/components/layout/MainLayout";
 
-type Props = {}
+type Props = {};
 
 const Page = (props: Props) => {
   return (
-    <div>
-      <StudentDashboard />
-    </div>
-  )
-}
+    // <MainLayout>
+    <StudentDashboard />
+    // </MainLayout>
+  );
+};
 
-export default Page
+export default Page;

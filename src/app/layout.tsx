@@ -35,6 +35,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${rajdhani.variable} antialiased`}
       >
         <MainLayout>{children}</MainLayout>
+        {/* {children} */}
       </body>
     </html>
   );

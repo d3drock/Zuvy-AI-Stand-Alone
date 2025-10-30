@@ -15,13 +15,17 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
+import { getUser } from '@/store/store'
 
 interface MainLayoutProps {
   children: ReactNode;
 }
 
 const MainLayout = ({ children }: MainLayoutProps) => {
+  const { user } = getUser()
   const pathname = usePathname();
+
+  const role = user.rolesList && user.rolesList[0] ? user.rolesList[0].toLowerCase() : null;
 
   const navigationItems = [
     {
@@ -101,31 +105,34 @@ const MainLayout = ({ children }: MainLayoutProps) => {
                 priority
               />
             </Link>
-            <nav className="flex items-center space-x-1">
-              {navigationItems.map((item) => {
-                const Icon = item.icon;
-
-                const isActive =
-                  typeof item.active === "function"
-                    ? item.active(pathname)
-                    : item.active === pathname;
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center space-x-2 px-4 py-2 rounded-lg text-[0.95rem] font-medium transition-all duration-200",
-                      isActive
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground hover:bg-gray-100"
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span className="">{item.name}</span>
-                  </Link>
-                );
-              })}
-            </nav>
+            {
+              role === 'admin' && (
+                <nav className="flex items-center space-x-1">
+                  {navigationItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive =
+                      typeof item.active === "function"
+                        ? item.active(pathname)
+                        : item.active === pathname;
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className={cn(
+                          "flex items-center space-x-2 px-4 py-2 rounded-lg text-[0.95rem] font-medium transition-all duration-200",
+                          isActive
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground hover:bg-gray-100"
+                        )}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span className="">{item.name}</span>
+                      </Link>
+                    );
+                  })}
+                </nav>
+              )
+            }
           </div>
 
           <Button

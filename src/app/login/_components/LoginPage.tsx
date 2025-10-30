@@ -115,7 +115,7 @@ function LoginPage() {
     const firstRowCards = socialProofData.slice(0, 5)
     const secondRowCards = socialProofData.slice(5, 8)
 
-    console.log('user', user)
+    console.log('I am in login page')
 
     // Student Card Component
     const StudentCard = ({
@@ -265,7 +265,7 @@ const handleGoogleSuccess = async (
         console.log('user', user)
         if(user.rolesList && user.rolesList[0] === 'student') {
             router.push('/student')
-        }else if (user.rolesList && user.rolesList[0] === 'admin') {
+        }else if (user.rolesList && user.rolesList[0] && user.rolesList[0].toLowerCase() === 'admin') {
             router.push(`/admin/admin-assessment-management`)
         }
     }, [user])
