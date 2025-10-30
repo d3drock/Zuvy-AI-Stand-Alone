@@ -6,9 +6,9 @@ type Props = {};
 
 const Page = (props: Props) => {
   return (
-    // <MainLayout>
-    <StudentDashboard />
-    // </MainLayout>
+    <MainLayout>
+      <StudentDashboard />
+    </MainLayout>
   );
 };
 
