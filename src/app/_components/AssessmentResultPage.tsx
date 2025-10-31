@@ -665,83 +665,85 @@ export default function AssessmentResultsPage() {
         {/* Question Review */}
         <TabsContent value="review">
           <Accordion type="single" collapsible className="w-full">
-            {evaluations.map((q, index) => (
-              <AccordionItem key={q.id} value={`question-${q.id}`}>
-                <AccordionTrigger>
-                  <div className="flex items-center gap-4 flex-1 text-left">
-                    <div
-                      className={cn(
-                        'flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center',
-                        q.status === 'correct'
-                          ? 'bg-success text-success-foreground'
-                          : 'bg-destructive text-destructive-foreground'
-                      )}
-                    >
-                      {q.status === 'correct' ? (
-                        <CheckCircle2 className="h-4 w-4" />
-                      ) : (
-                        <XCircle className="h-4 w-4" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-body2">
-                        Question {index + 1}
-                      </p>
-                      <p className="text-sm text-muted-foreground line-clamp-1">
-                        {q.question}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">{q.topic}</Badge>
-                      {getDifficultyBadge(q.difficulty)}
-                    </div>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="p-4 space-y-4">
-                    <div>
-                      <p className="text-body1 font-medium mb-2 whitespace-pre-wrap">{q.question}</p>
-                    </div>
-
-                    <div className="space-y-2">
-                      {Object.entries(q.options).map(([key, value]) => (
-                        <div
-                          key={key}
-                          className={cn(
-                            'p-3 rounded-lg border-2',
-                            parseInt(key) === q.correctOption && q.status === 'correct'
-                              ? 'border-success bg-success/10'
-                              : parseInt(key) === q.selectedAnswerByStudent && q.status === 'incorrect'
-                              ? 'border-destructive bg-destructive/10'
-                              : parseInt(key) === q.correctOption
-                              ? 'border-success bg-success/10'
-                              : 'border-border bg-muted/30'
-                          )}
-                        >
-                          <div className="flex items-start gap-2">
-                            <span className="font-medium">{key}.</span>
-                            <span className="flex-1">{value}</span>
-                            {parseInt(key) === q.selectedAnswerByStudent && (
-                              <Badge variant="secondary" className="text-xs">Your Answer</Badge>
-                            )}
-                            {parseInt(key) === q.correctOption && (
-                              <Badge className="bg-success text-xs">Correct</Badge>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {q.status === 'incorrect' && q.explanation && (
-                      <div className="p-4 rounded-lg bg-muted">
-                        <p className="text-sm font-medium mb-2">Explanation:</p>
-                        <p className="text-sm text-muted-foreground">{q.explanation}</p>
+            {evaluations.map((q, index) =>{
+              console.log('explaination',  q.explanation);
+              return(
+                <AccordionItem key={q.id} value={`question-${q.id}`}>
+                  <AccordionTrigger>
+                    <div className="flex items-center gap-4 flex-1 text-left">
+                      <div
+                        className={cn(
+                          'flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center',
+                          q.status === 'correct'
+                            ? 'bg-success text-success-foreground'
+                            : 'bg-destructive text-destructive-foreground'
+                        )}
+                      >
+                        {q.status === 'correct' ? (
+                          <CheckCircle2 className="h-4 w-4" />
+                        ) : (
+                          <XCircle className="h-4 w-4" />
+                        )}
                       </div>
-                    )}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
+                      <div className="flex-1">
+                        <p className="font-medium text-body2">
+                          Question {index + 1}
+                        </p>
+                        <p className="text-sm text-muted-foreground line-clamp-1">
+                          {q.question}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">{q.topic}</Badge>
+                        {getDifficultyBadge(q.difficulty)}
+                      </div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="p-4 space-y-4">
+                      <div>
+                        <p className="text-body1 font-medium mb-2 whitespace-pre-wrap">{q.question}</p>
+                      </div>
+
+                      <div className="space-y-2">
+                        {Object.entries(q.options).map(([key, value]) => (
+                          <div
+                            key={key}
+                            className={cn(
+                              'p-3 rounded-lg border-2',
+                              parseInt(key) === q.correctOption && q.status === 'correct'
+                                ? 'border-success bg-success/10'
+                                : parseInt(key) === q.selectedAnswerByStudent && q.status === 'incorrect'
+                                ? 'border-destructive bg-destructive/10'
+                                : parseInt(key) === q.correctOption
+                                ? 'border-success bg-success/10'
+                                : 'border-border bg-muted/30'
+                            )}
+                          >
+                            <div className="flex items-start gap-2">
+                              <span className="font-medium">{key}.</span>
+                              <span className="flex-1">{value}</span>
+                              {parseInt(key) === q.selectedAnswerByStudent && (
+                                <Badge variant="secondary" className="text-xs">Your Answer</Badge>
+                              )}
+                              {parseInt(key) === q.correctOption && (
+                                <Badge className="bg-success text-xs">Correct</Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {q.status === 'incorrect' && q.explanation && (
+                        <div className="p-4 rounded-lg bg-muted">
+                          <p className="text-sm font-medium mb-2">Explanation:</p>
+                          <p className="text-sm">{q.explanation}</p>
+                        </div>
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+            )})}
           </Accordion>
         </TabsContent>
       </Tabs>

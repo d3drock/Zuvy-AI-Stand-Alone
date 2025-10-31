@@ -261,7 +261,7 @@ export default function AssessmentSessionPage({ sessionId }: AssessmentSessionPa
       const response = await api.post('/ai-assessment/submit', payload);
 
       console.log('Assessment submitted successfully:', response.data);
-
+      
       // Update session with submissions
       const submissions: QuestionSubmission[] = [];
       let totalScore = 0;
@@ -316,6 +316,8 @@ export default function AssessmentSessionPage({ sessionId }: AssessmentSessionPa
       });
 
       setIsSubmitting(false);
+      setShowSubmitDialog(false)
+
 
       // Navigate to results
       setTimeout(() => {

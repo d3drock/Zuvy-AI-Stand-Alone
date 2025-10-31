@@ -19,6 +19,7 @@ import {
 import { api } from '@/utils/axios.config';
 import { useBootcamp } from '@/lib/hooks/useBootcamp';
 import TypingSkeleton from './LoadingSkeletion';
+import { useAiAssessment } from '@/lib/hooks/useAiAssessment';
 
 // Available topics for the assessment
 const AVAILABLE_TOPICS = [
@@ -63,6 +64,7 @@ interface AssessmentFormData {
   topics: TopicWithCount[];
   audience: string;
   bootcampId: number | null;
+  assessmentId?: number | null;
 }
 
 interface AssessmentConfigFormProps {
@@ -85,10 +87,15 @@ export function AssessmentConfigForm({
     topics: [],
     audience: '',
     bootcampId: null,
+  assessmentId: null,
   });
     const { bootcamps } = useBootcamp();
+    const { assessment, setBootcampId } = useAiAssessment();
+    const [assessmentId, setAssessmentId] = useState<number | null>(null);
+
 
     console.log(bootcamps)
+    console.log('assessment', assessment)
 
 
   const [newTopic, setNewTopic] = useState('');
@@ -107,12 +114,21 @@ export function AssessmentConfigForm({
   };
 
   const handleAudienceChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, audience: value }));
+    const parsedId = value ? parseInt(value) : null;
+    setAssessmentId(parsedId);
+    const selected = assessment?.find((a: any) => String(a.id) === String(value));
+    setFormData((prev) => ({ ...prev, audience: selected?.title || '' }));
   };
 
   const handleBootcampChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, bootcampId: value ? parseInt(value) : null }));
+    console.log("Selected Bootcamp ID:", value);
+    setBootcampId(parseInt(value));
+  setFormData((prev) => ({ ...prev, bootcampId: value ? parseInt(value) : null, assessmentId: null, audience: '' }));
   };
+
+  const handleAssessmentChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, assessment: value }));
+  }
 
   const [loading, setLoading] = useState(false);
 
@@ -145,19 +161,22 @@ export function AssessmentConfigForm({
     });
 
     const dataToSave = {
-      bootcampid: formData.bootcampId,
+      bootcampId: formData.bootcampId,
       title: formData.title,
       description: formData.description,
       difficulty: formData.difficulty,
       topics: topicsObject,
       audience: formData.audience,
+      totalNumberOfQuestions: formData.topics.reduce((sum, t) => sum + t.count, 0),
     };
 
-    console.log(dataToSave)
+    console.log('dataToSave:', dataToSave);
 
     setLoading(true);
     try {
       // await api.post('/content/generate-mcqs', dataToSave);
+      await api.post('/ai-assessment', dataToSave);
+      await api.post('/ai-assessment/generate/all', { aiAssessmentId: assessmentId });
       setLoading(false);
     }
     catch(error){
@@ -174,6 +193,7 @@ export function AssessmentConfigForm({
       topics: [],
       audience: '',
       bootcampId: null,
+      assessmentId: null,
     });
   };
 
@@ -183,6 +203,8 @@ export function AssessmentConfigForm({
   );
 
   console.log(bootcamps)
+
+  console.log('formData', formData);
 
   return (
     <>
@@ -236,6 +258,29 @@ export function AssessmentConfigForm({
               ))}
             </select>
           </div>
+
+          {
+            formData.bootcampId && assessment && assessment?.length > 0 &&
+             (
+              <div className="space-y-2">
+                <Label>Audience*</Label>
+                <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={formData.audience || ''}
+                onChange={(e) => handleAudienceChange(e.target.value)}
+              >
+                <option value="">Select an Assessment...</option>
+                {
+                  assessment && assessment.map((assess: any) => (
+                    <option key={assess.id} value={assess.id}>
+                      {assess.title}
+                    </option>
+                  ))
+                }
+              </select>
+            </div>
+            )
+          }
 
           {/* Difficulty Selection */}
           <div className="space-y-2">
@@ -313,7 +358,7 @@ export function AssessmentConfigForm({
           </Card>
 
           {/* Audience */}
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label>Audience *</Label>
             <Textarea
               placeholder="e.g., Assessment for AFE cohort, semester 2 and 3 CSE"
@@ -321,7 +366,7 @@ export function AssessmentConfigForm({
               onChange={(e) => handleAudienceChange(e.target.value)}
               rows={3}
             />
-          </div>
+          </div> */}
 
           {/* Preview Summary */}
           <Card className="p-4 bg-primary/5 border-primary/20">
@@ -358,8 +403,7 @@ export function AssessmentConfigForm({
               !formData.bootcampId ||
               !formData.difficulty ||
               !formData.topics ||
-              formData.topics.length === 0 ||
-              !formData.audience
+              formData.topics.length === 0
             }
           >
             {!loading ? 'Create Assessment' : 'Loading...'}
