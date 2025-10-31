@@ -21,7 +21,9 @@ export function FeedbackPanel({
   onNext,
   isLastQuestion,
 }: FeedbackPanelProps) {
-  const isCorrect = feedback.isCorrect;
+  // Determine if answer is correct by comparing student answers with correct answers
+  const isCorrect = feedback.studentAnswerIds.length === feedback.correctAnswerIds.length &&
+    feedback.studentAnswerIds.every(id => feedback.correctAnswerIds.includes(id));
 
   return (
     <div className="space-y-6">

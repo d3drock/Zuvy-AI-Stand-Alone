@@ -308,7 +308,7 @@ Bob Johnson,bob.johnson@example.com,`;
                   </div>
                 )}
 
-                {uploadProgress?.failedRecords > 0 && !isUploading && (
+                {uploadProgress && uploadProgress.failedRecords > 0 && !isUploading && (
                   <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Some records failed to upload</AlertTitle>

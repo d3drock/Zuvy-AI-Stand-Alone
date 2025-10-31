@@ -12,7 +12,7 @@ type ToasterToast = ToastProps & {
   title?: React.ReactNode
   description?: React.ReactNode
   action?: ToastActionElement
-  variant?: "default" | "success" | "error" | "warning" | "info" | "destructive"
+  variant?: "default" | "destructive"
   duration?: number
 }
 
@@ -170,11 +170,11 @@ function toast({ duration = 2000, ...props }: Toast) {
   }
 }
 
-toast.success = (props: Omit<Toast, 'variant'>) => toast({ ...props, variant: 'success' })
-toast.error = (props: Omit<Toast, 'variant'>) => toast({ ...props, variant: 'error' })
-toast.warning = (props: Omit<Toast, 'variant'>) => toast({ ...props, variant: 'warning' })
-toast.info = (props: Omit<Toast, 'variant'>) => toast({ ...props, variant: 'info' })
-toast.destructive = (props: Omit<Toast, 'variant'>) => toast({ ...props, variant: 'destructive' })
+toast.success = (props: Omit<ToasterToast, 'variant' | 'id'>) => toast({ ...props, variant: 'default' })
+toast.error = (props: Omit<ToasterToast, 'variant' | 'id'>) => toast({ ...props, variant: 'destructive' })
+toast.warning = (props: Omit<ToasterToast, 'variant' | 'id'>) => toast({ ...props, variant: 'default' })
+toast.info = (props: Omit<ToasterToast, 'variant' | 'id'>) => toast({ ...props, variant: 'default' })
+toast.destructive = (props: Omit<ToasterToast, 'variant' | 'id'>) => toast({ ...props, variant: 'destructive' })
 
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)

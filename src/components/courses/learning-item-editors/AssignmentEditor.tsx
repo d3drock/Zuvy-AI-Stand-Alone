@@ -225,7 +225,7 @@ export function AssignmentEditor({ initialData, onSave, onCancel, mode }: Assign
                     <Calendar
                       mode="single"
                       selected={data.dueDate}
-                      onSelect={(date) => handleChange('dueDate', date)}
+                      onSelect={(date: Date | undefined) => handleChange('dueDate', date)}
                       initialFocus
                     />
                   </PopoverContent>

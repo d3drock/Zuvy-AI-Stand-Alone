@@ -59,12 +59,12 @@ export function SortableItem({
     >
       {React.Children.map(children, child => {
         // Check if the child is a React element and has a data-drag-handle attribute
-        if (React.isValidElement(child) && child.props['data-drag-handle']) {
+        if (React.isValidElement(child) && (child.props as any)['data-drag-handle']) {
           // Clone the element and add the drag listeners
-          return React.cloneElement(child, {
-            ...child.props,
+          return React.cloneElement(child as any, {
+            ...(child.props as any),
             ...listeners,
-            className: cn(child.props.className, handleClassName, 'cursor-grab', isDragging && 'cursor-grabbing')
+            className: cn((child.props as any).className, handleClassName, 'cursor-grab', isDragging && 'cursor-grabbing')
           });
         }
         

@@ -49,7 +49,7 @@ const DataTable = ({
       const value = item[key];
       // Handle React elements by extracting text content
       if (isReactElement(value)) {
-        return value.props.children;
+        return (value as any).props?.children;
       }
       return value;
     }).filter(Boolean);
@@ -65,13 +65,13 @@ const DataTable = ({
     // Search filter
     const matchesSearch = !searchTerm || Object.values(item).some(value => {
       if (isReactElement(value)) {
-        return String(value.props.children).toLowerCase().includes(searchTerm.toLowerCase());
+        return String((value as any).props?.children).toLowerCase().includes(searchTerm.toLowerCase());
       }
       return String(value).toLowerCase().includes(searchTerm.toLowerCase());
     });
 
     // Type filter
-    const itemType = isReactElement(item.type) ? item.type.props.children : item.type;
+    const itemType = isReactElement(item.type) ? (item.type as any).props?.children : item.type;
     const matchesType = filters.type === 'all' || itemType === filters.type;
 
     // Topic filter

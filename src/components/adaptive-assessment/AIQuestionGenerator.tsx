@@ -46,7 +46,7 @@ interface GenerationConfig {
   aiProvider: 'openai' | 'anthropic' | 'gemini' | 'mock';
 }
 
-interface GeneratedQuestion extends Partial<AdaptiveQuestion> {
+interface GeneratedQuestion extends Omit<Partial<AdaptiveQuestion>, 'status'> {
   id: string;
   status: 'pending' | 'accepted' | 'rejected';
   aiConfidence?: number;
@@ -97,20 +97,16 @@ export function AIQuestionGenerator({
       subtopic: config.subtopic,
       explanation: `This is the correct answer because it follows modern best practices for ${config.topic}.`,
       conceptTested: config.topic,
-      distractorRationale: {
-        opt2: 'While this might work, it\'s not the recommended approach.',
-        opt3: 'This approach has known security vulnerabilities.',
-        opt4: 'This method is deprecated and should not be used.',
-      },
       relatedResources: [
         {
+          id: `resource-${i}`,
           title: `${config.topic} Documentation`,
           url: `https://example.com/docs/${config.topic.toLowerCase()}`,
-          type: 'documentation',
+          type: 'documentation' as const,
         },
       ],
       tags: [config.topic, 'AI Generated'],
-      status: 'pending',
+      status: 'pending' as const,
       aiConfidence: Math.random() * 30 + 70, // 70-100%
       estimatedTime: 120,
       createdAt: new Date().toISOString(),

@@ -410,7 +410,7 @@ const ModuleCard = ({
                         onDragOver={handleLearningItemDragOver}
                         onDrop={handleLearningItemDrop}
                         onKeyDown={handleLearningItemKeyDown}
-                        showDropIndicator={showDropIndicator || showDropIndicatorBelow}
+                        showDropIndicator={!!(showDropIndicator || showDropIndicatorBelow)}
                         dropPosition={showDropIndicator ? 'above' : 'below'}
                       />
                     </div>
