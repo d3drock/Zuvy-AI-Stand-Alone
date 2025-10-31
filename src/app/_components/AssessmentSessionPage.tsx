@@ -38,10 +38,18 @@ interface AssessmentAnswerPayload {
   topic: string;
   difficulty: string;
   options: {
-    [key: string]: string;
-  };
+    id: number;
+    questionId: number;
+    optionText: string;
+    optionNumber: number;
+  }[];
   correctOption: number;
-  selectedAnswerByStudent: number;
+  selectedAnswerByStudent: {
+    id: number;
+    questionId: number;
+    optionText: string;
+    optionNumber: number;
+  };
   language: string;
 }
 
@@ -63,12 +71,12 @@ export default function AssessmentSessionPage({ sessionId }: AssessmentSessionPa
 
   // Helper function to transform API questions to AdaptiveQuestion format
   const transformToAdaptiveQuestion = (llmQuestion: QuestionByLLM): AdaptiveQuestion => {
-    // Convert options object to array format
-    const optionsArray = Object.entries(llmQuestion.options).map(([key, value]) => ({
-      id: `option-${llmQuestion.id}-${key}`,
-      text: value,
-      isCorrect: parseInt(key) === llmQuestion.answer,
-      distractorRationale: parseInt(key) !== llmQuestion.answer 
+    // Convert options array to QuestionOption format
+    const optionsArray = llmQuestion.options.map((opt) => ({
+      id: `option-${llmQuestion.id}-${opt.optionNumber}`,
+      text: opt.optionText,
+      isCorrect: opt.optionNumber === llmQuestion.correctOption.optionNumber,
+      distractorRationale: opt.optionNumber !== llmQuestion.correctOption.optionNumber
         ? 'This answer is incorrect. Please review the concept.' 
         : undefined,
     }));
@@ -77,12 +85,14 @@ export default function AssessmentSessionPage({ sessionId }: AssessmentSessionPa
 
     // Map difficulty to numeric scale (1-10)
     const difficultyMap: { [key: string]: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 } = {
-      'basic': 3,
+      'very easy': 2,
       'easy': 3,
+      'basic': 4,
       'medium': 5,
       'intermediate': 5,
+      'advanced': 7,
       'hard': 8,
-      'advanced': 8,
+      'expert': 10,
     };
 
     return {
@@ -96,7 +106,7 @@ export default function AssessmentSessionPage({ sessionId }: AssessmentSessionPa
       topic: llmQuestion.topic,
       subtopic: llmQuestion.language,
       tags: [llmQuestion.language, llmQuestion.difficulty, llmQuestion.topic],
-      explanation: `The correct answer is option ${llmQuestion.answer}. This tests your understanding of ${llmQuestion.topic} in ${llmQuestion.language}.`,
+      explanation: `The correct answer is "${llmQuestion.correctOption.optionText}". This tests your understanding of ${llmQuestion.topic} in ${llmQuestion.language}.`,
       conceptTested: llmQuestion.topic,
       estimatedTime: 120, // 2 minutes default
       relatedResources: [],
@@ -232,9 +242,19 @@ export default function AssessmentSessionPage({ sessionId }: AssessmentSessionPa
             return null;
           }
 
-          // Extract the option number from the selected option ID (e.g., "option-1-2" -> 2)
+          // Extract the option number from the selected option ID (e.g., "option-67-2" -> 2)
           const selectedOptionNumber = parseInt(selectedOptionIds[0].split('-')[2]);
           console.log('Selected option number:', selectedOptionNumber);
+
+          // Find the full option object for the selected option number
+          const selectedOptionObj = originalQuestion.options.find(
+            (opt) => opt.optionNumber === selectedOptionNumber
+          );
+
+          if (!selectedOptionObj) {
+            console.warn(`Selected option object not found for question ${originalQuestion.id} option number ${selectedOptionNumber}`);
+            return null;
+          }
 
           const answer: AssessmentAnswerPayload = {
             id: originalQuestion.id,
@@ -242,12 +262,12 @@ export default function AssessmentSessionPage({ sessionId }: AssessmentSessionPa
             topic: originalQuestion.topic,
             difficulty: originalQuestion.difficulty,
             options: originalQuestion.options,
-            correctOption: originalQuestion.answer,
-            selectedAnswerByStudent: selectedOptionNumber,
+            correctOption: originalQuestion.correctOption.optionNumber,
+            selectedAnswerByStudent: selectedOptionObj,
             language: originalQuestion.language,
           };
 
-          console.log(answer)
+          console.log('Prepared answer:', answer);
 
           return answer;
         })
@@ -260,7 +280,7 @@ export default function AssessmentSessionPage({ sessionId }: AssessmentSessionPa
       // Call the API
       const response = await api.post('/ai-assessment/submit', payload);
 
-      console.log('Assessment submitted successfully:', response.data);
+      // console.log('Assessment submitted successfully:', response.data);
       
       // Update session with submissions
       const submissions: QuestionSubmission[] = [];

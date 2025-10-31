@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/utils/axios.config";
+import { useToast } from "@/components/ui/use-toast";
 
 export interface AiAssessment {
   id: number;
@@ -19,47 +20,59 @@ export interface AiAssessment {
   updatedAt: string;
 }
 
+interface UseAiAssessmentParams {
+  bootcampId?: number | null;
+}
+
 interface UseAiAssessmentReturn {
   assessment: AiAssessment[] | null;
-  setBootcampId: (bootcampId: number) => void;
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
 }
 
-export function useAiAssessment(): UseAiAssessmentReturn {
+export function useAiAssessment(params?: UseAiAssessmentParams): UseAiAssessmentReturn {
   const [assessment, setAssessment] = useState<AiAssessment[] | null>(null);
-  const [bootcampId, setBootcampId] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const bootcampId = params?.bootcampId;
+  const { toast } = useToast();
 
   const fetchAssessment = useCallback(async () => {
-    if (!bootcampId) return;
     try {
       setLoading(true);
       setError(null);
-      // const url = `/ai-assessment?bootcampId=${encodeURIComponent(String(bootcampId))}`
-      const res = await api.get(
-        `/ai-assessment?bootcampId=${encodeURIComponent(String(bootcampId))}`
-      );
+      // Build URL with optional bootcampId query parameter
+      const url = bootcampId 
+        ? `/ai-assessment?bootcampId=${encodeURIComponent(String(bootcampId))}`
+        : '/ai-assessment';
+      
+      const res = await api.get(url);
       console.log("Fetched AI assessment:", res.data);
       setAssessment(res.data);
     } catch (err: any) {
       console.error("Error fetching AI assessment:", err);
-      setError(err?.response?.data?.message || "Failed to fetch AI assessment");
+      const errorMessage = err?.response?.data?.message || "Failed to fetch AI assessment";
+      setError(errorMessage);
       setAssessment(null);
+      
+      // Show toast notification for the error
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: errorMessage,
+      });
     } finally {
       setLoading(false);
     }
-  }, [bootcampId]);
+  }, [bootcampId, toast]);
 
   useEffect(() => {
-    if (bootcampId) fetchAssessment();
+    fetchAssessment();
   }, [bootcampId, fetchAssessment]);
 
   return {
     assessment,
-    setBootcampId,
     loading,
     error,
     refetch: fetchAssessment,

@@ -1,51 +1,65 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Search, Play, Edit, Trash2, Copy, Users } from 'lucide-react';
+import { Plus, Search, Play, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { AssessmentConfigForm } from '@/components/adaptive-assessment/AssessmentConfigForm';
-import { mockAssessmentConfigs, mockAdaptiveQuestions } from '@/types/mock-adaptive-data';
-import { AssessmentConfiguration } from '@/types/adaptive-assessment';
 import TypingSkeleton from '@/components/adaptive-assessment/LoadingSkeletion';
+import { useAiAssessment } from '@/lib/hooks/useAiAssessment';
+import { useBootcamp } from '@/lib/hooks/useBootcamp';
 
 export default function AssessmentManagementPage() {
-  const [assessments, setAssessments] = useState<AssessmentConfiguration[]>(
-    mockAssessmentConfigs
-  );
+  const [selectedBootcampId, setSelectedBootcampId] = useState<number | null>(null);
+  
+  const { assessment: getAssessments, loading, error } = useAiAssessment({ 
+    bootcampId: selectedBootcampId 
+  });
+  const { bootcamps, loading: bootcampsLoading } = useBootcamp();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [editorOpen, setEditorOpen] = useState(false);
-  const [selectedAssessment, setSelectedAssessment] = useState<
-    AssessmentConfiguration | undefined
-  >();
+  const [selectedAssessment, setSelectedAssessment] = useState<any>();
   const [editorMode, setEditorMode] = useState<'create' | 'edit'>('create');
 
   // Helper function to calculate total questions from topics
-  const getTotalQuestions = (assessment: AssessmentConfiguration): number => {
-    if (assessment.totalQuestions) {
-      return assessment.totalQuestions;
+  const getTotalQuestions = (assessment: any): number => {
+    // For API response with totalNumberOfQuestions field
+    if (assessment.totalNumberOfQuestions) {
+      return assessment.totalNumberOfQuestions;
     }
-    // If topics is an object with counts, sum them up
-    if (assessment.topics && typeof assessment.topics === 'object' && !Array.isArray(assessment.topics)) {
-      return Object.values(assessment.topics).reduce((sum: number, count) => sum + Number(count), 0);
+    // If topics is an array with objects containing count
+    if (Array.isArray(assessment.topics)) {
+      return assessment.topics.reduce((sum: number, topic: any) => sum + (topic.count || 0), 0);
+    }
+    // If topics is an object with counts
+    if (assessment.topics && typeof assessment.topics === 'object') {
+      return Object.values(assessment.topics).reduce((sum: number, count) => sum + Number(count || 0), 0);
     }
     return 0;
   };
 
-  // Get unique topics from questions
+  // Get unique topics from API assessments
   const availableTopics = Array.from(
-    new Set(mockAdaptiveQuestions.map((q) => q.topic))
+    new Set(
+      (getAssessments || []).flatMap((assessment) => {
+        if (Array.isArray(assessment.topics)) {
+          return assessment.topics.map((t: any) => t.topic);
+        }
+        if (assessment.topics && typeof assessment.topics === 'object') {
+          return Object.keys(assessment.topics);
+        }
+        return [];
+      })
+    )
   );
 
-  // Filter assessments
+  // Use API data or empty array
+  const assessments = getAssessments || [];
+
+  // Filter assessments by search query
   const filteredAssessments = assessments.filter((assessment) =>
     assessment.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -56,47 +70,9 @@ export default function AssessmentManagementPage() {
     setEditorOpen(true);
   };
 
-  const handleEditAssessment = (assessment: AssessmentConfiguration) => {
-    setSelectedAssessment(assessment);
-    setEditorMode('edit');
-    setEditorOpen(true);
-  };
-
-  const handleDuplicateAssessment = (assessment: AssessmentConfiguration) => {
-    const duplicated = {
-      ...assessment,
-      id: `config${Date.now()}`,
-      title: `${assessment.title} (Copy)`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setAssessments([...assessments, duplicated]);
-  };
-
-  const handleDeleteAssessment = (assessmentId: string) => {
-    if (confirm('Are you sure you want to delete this assessment?')) {
-      setAssessments(assessments.filter((a) => a.id !== assessmentId));
-    }
-  };
-
-  const handleSaveAssessment = (assessmentData: Partial<AssessmentConfiguration>) => {
-    if (editorMode === 'create') {
-      const newAssessment: AssessmentConfiguration = {
-        ...assessmentData,
-        id: `config${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      } as AssessmentConfiguration;
-      setAssessments([...assessments, newAssessment]);
-    } else if (selectedAssessment) {
-      setAssessments(
-        assessments.map((a) =>
-          a.id === selectedAssessment.id
-            ? { ...a, ...assessmentData, updatedAt: new Date().toISOString() }
-            : a
-        )
-      );
-    }
+  const handleSaveAssessment = (assessmentData: any) => {
+    // After saving, refetch the assessments
+    setEditorOpen(false);
   };
 
   const formatDate = (dateString: string) => {
@@ -107,6 +83,7 @@ export default function AssessmentManagementPage() {
     });
   };
 
+  console.log(getAssessments)
   return (
     <div className="w-full px-6 py-8">
       {/* Header */}
@@ -135,6 +112,22 @@ export default function AssessmentManagementPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
           />
+        </div>
+
+        {/* Bootcamp Filter */}
+        <div className="mt-4 max-w-md">
+          <select
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            value={selectedBootcampId || ''}
+            onChange={(e) => setSelectedBootcampId(e.target.value ? parseInt(e.target.value) : null)}
+          >
+            <option value="">All Bootcamps</option>
+            {bootcamps.map((bootcamp) => (
+              <option key={bootcamp.id} value={bootcamp.id}>
+                {bootcamp.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -167,14 +160,24 @@ export default function AssessmentManagementPage() {
 
       {/* Assessment List */}
       <div className="space-y-4">
-        {filteredAssessments.length === 0 ? (
+        {loading ? (
+          <Card className="p-12 text-center">
+            <TypingSkeleton />
+          </Card>
+        ) : filteredAssessments.length === 0 ? (
           <Card className="p-12 text-center">
             <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="font-heading text-body1 font-semibold mb-2">
-              No assessments found
+              {selectedBootcampId 
+                ? "No Assessments Found Related to the Bootcamp"
+                : "No Assessments Found"
+              }
             </h3>
             <p className="text-body2 text-muted-foreground mb-4">
-              Try adjusting your search or create a new assessment
+              {selectedBootcampId 
+                ? "Try selecting a different bootcamp or create a new assessment"
+                : "Create a new assessment to get started"
+              }
             </p>
             <Button onClick={handleCreateAssessment} className="gap-2">
               <Plus className="h-4 w-4" />
@@ -194,65 +197,48 @@ export default function AssessmentManagementPage() {
                     <h3 className="font-heading text-body1 font-semibold mb-1">
                       {assessment.title}
                     </h3>
-                    <p className="text-body2 text-muted-foreground line-clamp-2">
-                      {assessment.description}
-                    </p>
+                    {assessment.description && (
+                      <p className="text-body2 text-muted-foreground line-clamp-2">
+                        {assessment.description}
+                      </p>
+                    )}
                   </div>
 
                   {/* Meta Info */}
-                  <div className="flex items-center gap-4 mb-3 text-body2 text-muted-foreground">
+                  <div className="flex items-center gap-4 mb-3 text-body2 text-muted-foreground flex-wrap">
                     <div className="flex items-center gap-2">
                       <Play className="h-4 w-4" />
                       <span>{getTotalQuestions(assessment)} questions</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span>⏱</span>
-                      <span>{assessment.timeLimit || 'N/A'} min</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span>🎯</span>
-                      <span>{assessment.passingScore || 'N/A'}% to pass</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      <span>0 attempts</span>
-                    </div>
+                    {assessment.difficulty && (
+                      <div className="flex items-center gap-2">
+                        <span>📊</span>
+                        <span>{assessment.difficulty}</span>
+                      </div>
+                    )}
+                    {assessment.audience && (
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        <span>{assessment.audience}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Topics */}
                   <div className="flex items-center gap-2 flex-wrap mb-3">
-                    {assessment.topics && typeof assessment.topics === 'object' && !Array.isArray(assessment.topics) ? (
+                    {Array.isArray(assessment.topics) ? (
+                      assessment.topics.map((topicItem: any) => (
+                        <Badge key={topicItem.topic} variant="outline">
+                          {topicItem.topic} ({topicItem.count})
+                        </Badge>
+                      ))
+                    ) : assessment.topics && typeof assessment.topics === 'object' ? (
                       Object.entries(assessment.topics).map(([topic, count]) => (
                         <Badge key={topic} variant="outline">
                           {topic} ({String(count)})
                         </Badge>
                       ))
-                    ) : Array.isArray(assessment.topics) ? (
-                      (assessment.topics as string[]).map((topic: string) => (
-                        <Badge key={topic} variant="outline">
-                          {topic}
-                        </Badge>
-                      ))
                     ) : null}
-                  </div>
-
-                  {/* Settings */}
-                  <div className="flex items-center gap-3 text-xs">
-                    {assessment.showFeedback && (
-                      <Badge variant="secondary" className="text-xs">
-                        Instant Feedback
-                      </Badge>
-                    )}
-                    {assessment.allowRetry && (
-                      <Badge variant="secondary" className="text-xs">
-                        Retry: {assessment.retryDelay}h delay
-                      </Badge>
-                    )}
-                    {assessment.randomizeOptions && (
-                      <Badge variant="secondary" className="text-xs">
-                        Randomized
-                      </Badge>
-                    )}
                   </div>
 
                   {/* Dates */}
@@ -262,45 +248,22 @@ export default function AssessmentManagementPage() {
                   </div>
                 </div>
 
-                {/* Actions */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <svg
-                        className="h-4 w-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                        />
-                      </svg>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleEditAssessment(assessment)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleDuplicateAssessment(assessment)}
-                    >
-                      <Copy className="h-4 w-4 mr-2" />
-                      Duplicate
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleDeleteAssessment(assessment.id)}
-                      className="text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {/* Actions - Removed for now since we're using API data */}
+                <Button variant="ghost" size="icon" disabled>
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                    />
+                  </svg>
+                </Button>
               </div>
             </Card>
           ))
@@ -313,6 +276,8 @@ export default function AssessmentManagementPage() {
         onOpenChange={setEditorOpen}
         onSave={handleSaveAssessment}
         mode={editorMode}
+        bootcamps={bootcamps}
+        bootcampsLoading={bootcampsLoading}
       />
     </div>
   );

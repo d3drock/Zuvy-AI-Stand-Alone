@@ -4,20 +4,30 @@ import { useState, useEffect } from 'react'
 import { api } from '@/utils/axios.config'
 
 export interface QuestionOption {
-  [key: string]: string
+  id: number
+  questionId: number
+  optionText: string
+  optionNumber: number
+}
+
+export interface CorrectOption {
+  id: number
+  questionId: number
+  optionText: string
+  optionNumber: number
 }
 
 export interface QuestionByLLM {
   id: number
   topic: string
   difficulty: string
-  bootcampId: number | null
+  aiAssessmentId: number
   question: string
-  options: QuestionOption
-  answer: number
   language: string
   createdAt: string
   updatedAt: string
+  options: QuestionOption[]
+  correctOption: CorrectOption
 }
 
 export type QuestionsByLLMApiResponse = QuestionByLLM[]
@@ -40,7 +50,7 @@ export function useQuestionsByLLM(): UseQuestionsByLLMReturn {
       setLoading(true)
       setError(null)
 
-      const response = await api.get<QuestionsByLLMApiResponse>('/questions-by-llm')
+      const response = await api.get<QuestionsByLLMApiResponse>('/questions-by-llm?aiAssessmentId=1')
 
       setQuestions(response.data)
     } catch (err: any) {

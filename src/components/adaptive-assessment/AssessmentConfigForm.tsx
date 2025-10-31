@@ -21,6 +21,12 @@ import { useBootcamp } from '@/lib/hooks/useBootcamp';
 import TypingSkeleton from './LoadingSkeletion';
 import { useAiAssessment } from '@/lib/hooks/useAiAssessment';
 
+interface Bootcamp {
+  id: number;
+  name: string;
+  [key: string]: any;
+}
+
 // Available topics for the assessment
 const AVAILABLE_TOPICS = [
   'Arrays',
@@ -72,6 +78,8 @@ interface AssessmentConfigFormProps {
   onOpenChange: (open: boolean) => void;
   onSave: (config: any) => void;
   mode: 'create' | 'edit';
+  bootcamps: Bootcamp[];
+  bootcampsLoading: boolean;
 }
 
 export function AssessmentConfigForm({
@@ -79,6 +87,8 @@ export function AssessmentConfigForm({
   onOpenChange,
   onSave,
   mode,
+  bootcamps,
+  bootcampsLoading,
 }: AssessmentConfigFormProps) {
   const [formData, setFormData] = useState<AssessmentFormData>({
     title: '',
@@ -89,8 +99,8 @@ export function AssessmentConfigForm({
     bootcampId: null,
   assessmentId: null,
   });
-    const { bootcamps } = useBootcamp();
-    const { assessment, setBootcampId } = useAiAssessment();
+    const [selectedBootcampForAssessment, setSelectedBootcampForAssessment] = useState<number | null>(null);
+    const { assessment } = useAiAssessment({ bootcampId: selectedBootcampForAssessment });
     const [assessmentId, setAssessmentId] = useState<number | null>(null);
 
 
@@ -122,8 +132,9 @@ export function AssessmentConfigForm({
 
   const handleBootcampChange = (value: string) => {
     console.log("Selected Bootcamp ID:", value);
-    setBootcampId(parseInt(value));
-  setFormData((prev) => ({ ...prev, bootcampId: value ? parseInt(value) : null, assessmentId: null, audience: '' }));
+    const bootcampId = value ? parseInt(value) : null;
+    setSelectedBootcampForAssessment(bootcampId);
+    setFormData((prev) => ({ ...prev, bootcampId, assessmentId: null, audience: '' }));
   };
 
   const handleAssessmentChange = (value: string) => {
