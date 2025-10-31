@@ -55,6 +55,7 @@ interface AssessmentAnswerPayload {
 
 interface SubmitAssessmentPayload {
   answers: AssessmentAnswerPayload[];
+  aiAssessmentId: number
 }
 
 export default function AssessmentSessionPage({ sessionId }: AssessmentSessionPageProps) {
@@ -273,14 +274,14 @@ export default function AssessmentSessionPage({ sessionId }: AssessmentSessionPa
         })
         .filter((answer): answer is AssessmentAnswerPayload => answer !== null);
 
-      const payload: SubmitAssessmentPayload = { answers };
+      const payload: SubmitAssessmentPayload = { answers , aiAssessmentId: +sessionId};
 
       console.log('Final payload:', JSON.stringify(payload, null, 2));
 
       // Call the API
       const response = await api.post('/ai-assessment/submit', payload);
 
-      // console.log('Assessment submitted successfully:', response.data);
+      console.log('Assessment submitted successfully:', response.data);
       
       // Update session with submissions
       const submissions: QuestionSubmission[] = [];
@@ -341,7 +342,7 @@ export default function AssessmentSessionPage({ sessionId }: AssessmentSessionPa
 
       // Navigate to results
       setTimeout(() => {
-        router.push(`/student/studentAssessment/studentResults`);
+        router.push(`/student/studentAssessment/studentResults?assessmentId=${sessionId}`);
       }, 1000);
 
     } catch (error: any) {
@@ -405,7 +406,7 @@ export default function AssessmentSessionPage({ sessionId }: AssessmentSessionPa
 
   // Handle exit
   const handleExit = () => {
-    router.push('/student/dashboard');
+    router.push('/student');
   };
 
   if (loading || questionLoading) {

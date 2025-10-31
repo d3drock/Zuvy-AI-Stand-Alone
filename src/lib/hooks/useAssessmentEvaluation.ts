@@ -3,18 +3,23 @@
 import { useState, useEffect } from 'react'
 import { api } from '@/utils/axios.config'
 
+export interface QuestionOption {
+  id: number
+  optionText: string
+  questionId: number
+  optionNumber: number
+}
+
 export interface EvaluationQuestion {
   id: number
+  aiAssessmentId: number
   question: string
   topic: string
   difficulty: string
-  options: {
-    [key: string]: string
-  }
-  correctOption: number
-  selectedAnswerByStudent: number
+  options: QuestionOption[]
+  selectedAnswerByStudent: number // This is now the option ID, not the option number
   language: string
-  status: string
+  status: string | null
   explanation: string
   summary: string
   recommendations: string
@@ -28,6 +33,7 @@ export type AssessmentEvaluationApiResponse = EvaluationQuestion[]
 interface UseAssessmentEvaluationParams {
   userId: number | null
   enabled?: boolean // Option to control when to fetch
+  assessmentId: number
 }
 
 interface UseAssessmentEvaluationReturn {
@@ -40,6 +46,7 @@ interface UseAssessmentEvaluationReturn {
 
 export function useAssessmentEvaluation({ 
   userId, 
+  assessmentId,
   enabled = true 
 }: UseAssessmentEvaluationParams): UseAssessmentEvaluationReturn {
   const [evaluations, setEvaluations] = useState<EvaluationQuestion[]>([])
@@ -57,7 +64,7 @@ export function useAssessmentEvaluation({
       setError(null)
 
       const response = await api.get<AssessmentEvaluationApiResponse>(
-        `/questions-by-llm/evaluation/${userId}`
+        `/questions-by-llm/evaluation/${userId}/${assessmentId}`
       )
 
       setEvaluations(response.data)

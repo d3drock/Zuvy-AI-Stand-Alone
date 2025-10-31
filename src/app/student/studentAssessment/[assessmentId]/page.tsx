@@ -1,11 +1,19 @@
+"use client";
 import AssessmentSessionPage from '@/app/_components/AssessmentSessionPage'
+import { useParams } from 'next/navigation'
 import React from 'react'
 
 type Props = {}
 
 const Page = (props: Props) => {
+
+  const param = useParams()
+  // console.log(param)
+  const assessmentid =  param.assessmentId?.toString() || ''
+
+
   return (
-    <div><AssessmentSessionPage sessionId={"1761561113488"} /></div>
+    <div><AssessmentSessionPage sessionId={assessmentid} /></div>
   )
 }
 

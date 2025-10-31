@@ -29,12 +29,13 @@ import { cn } from '@/lib/utils';
 import { useAssessmentEvaluation } from '@/lib/hooks/useAssessmentEvaluation';
 import { getUser } from '@/store/store';
 
-export default function AssessmentResultsPage() {
+export default function AssessmentResultsPage({assessmentId}: {assessmentId: string}) {
   const router = useRouter();
   const { user } = getUser();
 
   const { evaluations, loading, error } = useAssessmentEvaluation({ 
-    userId: parseInt(user.id)
+    userId: parseInt(user.id),
+    assessmentId: +assessmentId
   });
 
   // Calculate statistics from evaluation data
@@ -49,7 +50,11 @@ export default function AssessmentResultsPage() {
       };
     }
 
-    const correctAnswers = evaluations.filter(q => q.status === 'correct').length;
+    // Determine if answer is correct by checking if explanation contains "correct"
+    const correctAnswers = evaluations.filter(q => 
+      q.explanation?.toLowerCase().includes('the answer is correct')
+    ).length;
+    
     const totalQuestions = evaluations.length;
     const score = Math.round((correctAnswers / totalQuestions) * 100);
     const passingScore = 60;
@@ -57,9 +62,10 @@ export default function AssessmentResultsPage() {
     // Group by topic
     const topicMap = new Map<string, { correct: number; total: number }>();
     evaluations.forEach(q => {
+      const isCorrect = q.explanation?.toLowerCase().includes('the answer is correct');
       const existing = topicMap.get(q.topic) || { correct: 0, total: 0 };
       topicMap.set(q.topic, {
-        correct: existing.correct + (q.status === 'correct' ? 1 : 0),
+        correct: existing.correct + (isCorrect ? 1 : 0),
         total: existing.total + 1,
       });
     });
@@ -338,15 +344,17 @@ export default function AssessmentResultsPage() {
       yPosition += 8;
 
       // Options
-      Object.entries(q.options).forEach(([key, value]) => {
-        const isCorrect = parseInt(key) === q.correctOption;
-        const isSelected = parseInt(key) === q.selectedAnswerByStudent;
+      q.options.forEach((option) => {
+        const isCorrect = q.explanation?.toLowerCase().includes('the answer is correct') && 
+                         option.id === q.selectedAnswerByStudent;
+        const isSelected = option.id === q.selectedAnswerByStudent;
+        const isWrongAnswer = isSelected && !q.explanation?.toLowerCase().includes('the answer is correct');
         
         doc.setFontSize(9);
         if (isCorrect) {
           doc.setTextColor(...colors.success);
           doc.setFont('helvetica', 'bold');
-        } else if (isSelected && !isCorrect) {
+        } else if (isWrongAnswer) {
           doc.setTextColor(...colors.destructive);
           doc.setFont('helvetica', 'bold');
         } else {
@@ -354,14 +362,15 @@ export default function AssessmentResultsPage() {
           doc.setFont('helvetica', 'normal');
         }
         
-        const optionText = `${key}. ${value}${isSelected ? ' (Your Answer)' : ''}${isCorrect ? ' ✓' : ''}`;
+        const optionText = `${option.optionNumber}. ${option.optionText}${isSelected ? ' (Your Answer)' : ''}${isCorrect ? ' ✓' : ''}`;
         const optionLines = doc.splitTextToSize(optionText, pageWidth - 50);
         doc.text(optionLines, 25, yPosition);
         yPosition += optionLines.length * 4 + 2;
       });
 
       // Explanation for incorrect answers with muted background
-      if (q.status === 'incorrect' && q.explanation) {
+      const isIncorrect = !q.explanation?.toLowerCase().includes('the answer is correct');
+      if (isIncorrect && q.explanation) {
         yPosition += 3;
         doc.setFillColor(...colors.mutedLight);
         doc.setDrawColor(...colors.border);
@@ -666,7 +675,8 @@ export default function AssessmentResultsPage() {
         <TabsContent value="review">
           <Accordion type="single" collapsible className="w-full">
             {evaluations.map((q, index) =>{
-              console.log('explaination',  q.explanation);
+              const isCorrect = q.explanation?.toLowerCase().includes('the answer is correct');
+              
               return(
                 <AccordionItem key={q.id} value={`question-${q.id}`}>
                   <AccordionTrigger>
@@ -674,12 +684,12 @@ export default function AssessmentResultsPage() {
                       <div
                         className={cn(
                           'flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center',
-                          q.status === 'correct'
+                          isCorrect
                             ? 'bg-success text-success-foreground'
                             : 'bg-destructive text-destructive-foreground'
                         )}
                       >
-                        {q.status === 'correct' ? (
+                        {isCorrect ? (
                           <CheckCircle2 className="h-4 w-4" />
                         ) : (
                           <XCircle className="h-4 w-4" />
@@ -706,35 +716,39 @@ export default function AssessmentResultsPage() {
                       </div>
 
                       <div className="space-y-2">
-                        {Object.entries(q.options).map(([key, value]) => (
-                          <div
-                            key={key}
-                            className={cn(
-                              'p-3 rounded-lg border-2',
-                              parseInt(key) === q.correctOption && q.status === 'correct'
-                                ? 'border-success bg-success/10'
-                                : parseInt(key) === q.selectedAnswerByStudent && q.status === 'incorrect'
-                                ? 'border-destructive bg-destructive/10'
-                                : parseInt(key) === q.correctOption
-                                ? 'border-success bg-success/10'
-                                : 'border-border bg-muted/30'
-                            )}
-                          >
-                            <div className="flex items-start gap-2">
-                              <span className="font-medium">{key}.</span>
-                              <span className="flex-1">{value}</span>
-                              {parseInt(key) === q.selectedAnswerByStudent && (
-                                <Badge variant="secondary" className="text-xs">Your Answer</Badge>
+                        {q.options.map((option) => {
+                          const isSelected = option.id === q.selectedAnswerByStudent;
+                          const isThisCorrect = isCorrect && isSelected;
+                          const isThisWrong = !isCorrect && isSelected;
+                          
+                          return (
+                            <div
+                              key={option.id}
+                              className={cn(
+                                'p-3 rounded-lg border-2',
+                                isThisCorrect
+                                  ? 'border-success bg-success/10'
+                                  : isThisWrong
+                                  ? 'border-destructive bg-destructive/10'
+                                  : 'border-border bg-muted/30'
                               )}
-                              {parseInt(key) === q.correctOption && (
-                                <Badge className="bg-success text-xs">Correct</Badge>
-                              )}
+                            >
+                              <div className="flex items-start gap-2">
+                                <span className="font-medium">{option.optionNumber}.</span>
+                                <span className="flex-1">{option.optionText}</span>
+                                {isSelected && (
+                                  <Badge variant="secondary" className="text-xs">Your Answer</Badge>
+                                )}
+                                {isThisCorrect && (
+                                  <Badge className="bg-success text-xs">Correct</Badge>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
 
-                      {q.status === 'incorrect' && q.explanation && (
+                      {!isCorrect && q.explanation && (
                         <div className="p-4 rounded-lg bg-muted">
                           <p className="text-sm font-medium mb-2">Explanation:</p>
                           <p className="text-sm">{q.explanation}</p>
