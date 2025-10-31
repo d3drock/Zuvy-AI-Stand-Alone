@@ -6,7 +6,7 @@ type Props = {}
 const Page = (props: Props) => {
   return (
     <div>
-        <AssessmentResultsPage sessionId={"1761561113488"}  />
+        <AssessmentResultsPage />
     </div>
   )
 }

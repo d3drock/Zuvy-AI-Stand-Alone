@@ -15,6 +15,7 @@ import {
 import { AssessmentConfigForm } from '@/components/adaptive-assessment/AssessmentConfigForm';
 import { mockAssessmentConfigs, mockAdaptiveQuestions } from '@/types/mock-adaptive-data';
 import { AssessmentConfiguration } from '@/types/adaptive-assessment';
+import TypingSkeleton from '@/components/adaptive-assessment/LoadingSkeletion';
 
 export default function AssessmentManagementPage() {
   const [assessments, setAssessments] = useState<AssessmentConfiguration[]>(
@@ -113,7 +114,7 @@ export default function AssessmentManagementPage() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="font-heading text-h5 text-foreground mb-2">
-              Assessment Management
+              Assessment Management 
             </h1>
             <p className="text-body2 text-muted-foreground">
               Create and manage adaptive assessments

@@ -1,10 +1,15 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, ArrowRight, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useQuestionsByLLM, QuestionByLLM } from '@/lib/hooks/useQuestionsByLLM';
+import { AdaptiveQuestion } from '@/types/adaptive-assessment';
+import { api } from '@/utils/axios.config';
+import { useToast } from '@/components/ui/use-toast';
+
 import {
   Dialog,
   DialogContent,
@@ -15,32 +20,110 @@ import {
 } from '@/components/ui/dialog';
 import { QuestionDisplay } from '@/components/adaptive-assessment/QuestionDisplay';
 import { QuestionSidebar } from '@/components/adaptive-assessment/QuestionSidebar';
-import { TimerWidget } from '@/components/adaptive-assessment/TimerWidget';
 import { ProgressIndicator } from '@/components/adaptive-assessment/ProgressIndicator';
-import { OfflineIndicator } from '@/components/adaptive-assessment/OfflineIndicator';
-import { FeedbackPanel } from '@/components/adaptive-assessment/FeedbackPanel';
 import {
   AssessmentSession,
   QuestionSubmission,
-  AssessmentUIState,
 } from '@/types/adaptive-assessment';
-import { generateMockSession } from '@/types/mock-adaptive-data';
+import { Toaster } from '@/components/ui/toaster';
 
 interface AssessmentSessionPageProps {
   sessionId: string;
 }
 
+// API Payload interfaces
+interface AssessmentAnswerPayload {
+  id: number;
+  question: string;
+  topic: string;
+  difficulty: string;
+  options: {
+    [key: string]: string;
+  };
+  correctOption: number;
+  selectedAnswerByStudent: number;
+  language: string;
+}
+
+interface SubmitAssessmentPayload {
+  answers: AssessmentAnswerPayload[];
+}
+
 export default function AssessmentSessionPage({ sessionId }: AssessmentSessionPageProps) {
   const router = useRouter();
+  const { toast } = useToast();
 
   // Session state
   const [session, setSession] = useState<AssessmentSession | null>(null);
   const [loading, setLoading] = useState(true);
+  const { questions: apiQuestions, loading: questionLoading, error, refetch } = useQuestionsByLLM();
+  const [adaptiveQuestions, setAdaptiveQuestions] = useState<AdaptiveQuestion[]>([]);
+  // Store mapping between question index and original API question
+  const [questionMapping, setQuestionMapping] = useState<Map<number, QuestionByLLM>>(new Map());
+
+  // Helper function to transform API questions to AdaptiveQuestion format
+  const transformToAdaptiveQuestion = (llmQuestion: QuestionByLLM): AdaptiveQuestion => {
+    // Convert options object to array format
+    const optionsArray = Object.entries(llmQuestion.options).map(([key, value]) => ({
+      id: `option-${llmQuestion.id}-${key}`,
+      text: value,
+      isCorrect: parseInt(key) === llmQuestion.answer,
+      distractorRationale: parseInt(key) !== llmQuestion.answer 
+        ? 'This answer is incorrect. Please review the concept.' 
+        : undefined,
+    }));
+
+    const correctOption = optionsArray.find(opt => opt.isCorrect);
+
+    // Map difficulty to numeric scale (1-10)
+    const difficultyMap: { [key: string]: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 } = {
+      'basic': 3,
+      'easy': 3,
+      'medium': 5,
+      'intermediate': 5,
+      'hard': 8,
+      'advanced': 8,
+    };
+
+    return {
+      id: `q-${llmQuestion.id}`,
+      title: llmQuestion.topic,
+      questionText: llmQuestion.question,
+      questionType: 'single-answer',
+      options: optionsArray,
+      correctAnswerIds: correctOption ? [correctOption.id] : [],
+      difficulty: difficultyMap[llmQuestion.difficulty.toLowerCase()] || 5,
+      topic: llmQuestion.topic,
+      subtopic: llmQuestion.language,
+      tags: [llmQuestion.language, llmQuestion.difficulty, llmQuestion.topic],
+      explanation: `The correct answer is option ${llmQuestion.answer}. This tests your understanding of ${llmQuestion.topic} in ${llmQuestion.language}.`,
+      conceptTested: llmQuestion.topic,
+      estimatedTime: 120, // 2 minutes default
+      relatedResources: [],
+      createdAt: llmQuestion.createdAt,
+      updatedAt: llmQuestion.updatedAt,
+      createdBy: 'system',
+      status: 'active',
+    };
+  };
+
+  // Transform API questions when they load
+  useEffect(() => {
+    if (apiQuestions && apiQuestions.length > 0) {
+      const transformed = apiQuestions.map(transformToAdaptiveQuestion);
+      setAdaptiveQuestions(transformed);
+      
+      // Create mapping for original questions
+      const mapping = new Map<number, QuestionByLLM>();
+      apiQuestions.forEach((q, index) => {
+        mapping.set(index, q);
+      });
+      setQuestionMapping(mapping);
+    }
+  }, [apiQuestions]);
 
   // UI state
-  const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>([]);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [currentFeedback, setCurrentFeedback] = useState<any>(null);
+  const [selectedAnswers, setSelectedAnswers] = useState<Map<number, string[]>>(new Map());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
@@ -51,12 +134,29 @@ export default function AssessmentSessionPage({ sessionId }: AssessmentSessionPa
 
   // Initialize session
   useEffect(() => {
-    // In a real app, fetch session from API
-    // For now, generate a mock session
-    const mockSession = generateMockSession('student1', 'config1', 'in-progress');
-    setSession(mockSession);
-    setLoading(false);
-  }, [sessionId]);
+    if (adaptiveQuestions.length > 0) {
+      // Create session with transformed questions
+      const newSession: AssessmentSession = {
+        id: sessionId,
+        studentId: 'student1',
+        assessmentConfigId: 'config1',
+        status: 'in-progress',
+        currentQuestionIndex: 0,
+        questions: adaptiveQuestions,
+        submissions: [],
+        currentDifficulty: 5,
+        proficiencyEstimate: undefined,
+        score: 0,
+        totalQuestions: adaptiveQuestions.length,
+        timeRemaining: 0, // Timer removed
+        startTime: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      setSession(newSession);
+      setLoading(false);
+    }
+  }, [sessionId, adaptiveQuestions]);
 
   // Monitor online status
   useEffect(() => {
@@ -74,103 +174,175 @@ export default function AssessmentSessionPage({ sessionId }: AssessmentSessionPa
 
   const currentQuestion = session?.questions[session.currentQuestionIndex];
   const isLastQuestion = session && session.currentQuestionIndex === session.totalQuestions - 1;
-  const canSubmit = selectedOptionIds.length > 0;
+  const currentQuestionAnswers = selectedAnswers.get(session?.currentQuestionIndex ?? -1) || [];
 
   // Handle option selection
   const handleOptionSelect = (optionId: string) => {
-    if (!currentQuestion) return;
+    if (!currentQuestion || !session) return;
 
+    const currentIndex = session.currentQuestionIndex;
+    
     if (currentQuestion.questionType === 'single-answer') {
-      setSelectedOptionIds([optionId]);
+      setSelectedAnswers(prev => new Map(prev).set(currentIndex, [optionId]));
     } else {
       // Multiple answer - toggle selection
-      setSelectedOptionIds((prev) =>
-        prev.includes(optionId)
-          ? prev.filter((id) => id !== optionId)
-          : [...prev, optionId]
-      );
+      const current = selectedAnswers.get(currentIndex) || [];
+      const updated = current.includes(optionId)
+        ? current.filter((id) => id !== optionId)
+        : [...current, optionId];
+      setSelectedAnswers(prev => new Map(prev).set(currentIndex, updated));
     }
+
+    // Mark question as answered
+    setAnsweredQuestions((prev) => new Set([...prev, currentIndex]));
   };
 
-  // Handle submission
-  const handleSubmit = async () => {
-    if (!session || !currentQuestion || !canSubmit) return;
+  // Handle submission of all answers
+  const handleSubmitAssessment = async () => {
+    if (!session) return;
+
+    console.log('=== DEBUG: Starting submission ===');
+    console.log('Selected Answers:', selectedAnswers);
+    console.log('Question Mapping:', questionMapping);
+    console.log('API Questions:', apiQuestions);
+
+    // Validate that at least one question has been answered
+    if (selectedAnswers.size === 0) {
+      toast({
+        title: 'No Answers',
+        description: 'Please answer at least one question before submitting.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setIsSubmitting(true);
 
-    // Simulate submission delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    try {
+      // Prepare payload for API - only include answered questions
+      const answers: AssessmentAnswerPayload[] = Array.from(selectedAnswers.entries())
+        .filter(([_, selectedOptionIds]) => selectedOptionIds.length > 0) // Only answered questions
+        .map(([questionIndex, selectedOptionIds]) => {
+          console.log(`Processing question ${questionIndex}:`, selectedOptionIds);
+          const originalQuestion = questionMapping.get(questionIndex);
+          console.log('Original question:', originalQuestion);
+          
+          if (!originalQuestion) {
+            console.warn(`No original question found for index ${questionIndex}`);
+            return null;
+          }
 
-    // Check if answer is correct
-    const correctAnswerIds = new Set(currentQuestion.correctAnswerIds);
-    const selectedAnswerIds = new Set(selectedOptionIds);
+          // Extract the option number from the selected option ID (e.g., "option-1-2" -> 2)
+          const selectedOptionNumber = parseInt(selectedOptionIds[0].split('-')[2]);
+          console.log('Selected option number:', selectedOptionNumber);
 
-    const isCorrect =
-      correctAnswerIds.size === selectedAnswerIds.size &&
-      [...correctAnswerIds].every((id) => selectedAnswerIds.has(id));
+          const answer: AssessmentAnswerPayload = {
+            id: originalQuestion.id,
+            question: originalQuestion.question,
+            topic: originalQuestion.topic,
+            difficulty: originalQuestion.difficulty,
+            options: originalQuestion.options,
+            correctOption: originalQuestion.answer,
+            selectedAnswerByStudent: selectedOptionNumber,
+            language: originalQuestion.language,
+          };
 
-    // Create submission
-    const submission: QuestionSubmission = {
-      id: `sub-${Date.now()}`,
-      sessionId: session.id,
-      questionId: currentQuestion.id,
-      studentId: session.studentId,
-      selectedOptionIds: selectedOptionIds,
-      isCorrect,
-      score: isCorrect ? 1 : 0,
-      timeSpent: 60, // TODO: Calculate actual time spent
-      submittedAt: new Date().toISOString(),
-      clientTimestamp: new Date().toISOString(),
-      syncStatus: 'synced',
-    };
+          console.log(answer)
 
-    // Prepare feedback
-    const feedback = {
-      isCorrect,
-      studentAnswerIds: selectedOptionIds,
-      correctAnswerIds: currentQuestion.correctAnswerIds,
-      explanation: currentQuestion.explanation,
-      distractorExplanations: currentQuestion.options
-        .filter((opt) => !opt.isCorrect && selectedOptionIds.includes(opt.id))
-        .map((opt) => opt.distractorRationale || 'This answer is incorrect.')
-        .filter(Boolean),
-      relatedResources: currentQuestion.relatedResources,
-      encouragementMessage: isCorrect
-        ? 'Great job! You got it right.'
-        : 'Don\'t worry, let\'s learn from this mistake.',
-    };
+          return answer;
+        })
+        .filter((answer): answer is AssessmentAnswerPayload => answer !== null);
 
-    setCurrentFeedback(feedback);
+      const payload: SubmitAssessmentPayload = { answers };
 
-    // Update session
-    setSession((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        submissions: [...prev.submissions, submission],
-        score: prev.score + (isCorrect ? 1 : 0),
-      };
-    });
+      console.log('Final payload:', JSON.stringify(payload, null, 2));
 
-    // Mark question as answered
-    setAnsweredQuestions((prev) => new Set([...prev, session.currentQuestionIndex]));
+      // Call the API
+      const response = await api.post('/ai-assessment/submit', payload);
 
-    // Show feedback
-    setShowFeedback(true);
-    setIsSubmitting(false);
+      console.log('Assessment submitted successfully:', response.data);
+
+      // Update session with submissions
+      const submissions: QuestionSubmission[] = [];
+      let totalScore = 0;
+
+      selectedAnswers.forEach((selectedOptionIds, questionIndex) => {
+        const question = session.questions[questionIndex];
+        if (!question) return;
+
+        const correctAnswerIds = new Set(question.correctAnswerIds);
+        const selectedAnswerIds = new Set(selectedOptionIds);
+
+        const isCorrect =
+          correctAnswerIds.size === selectedAnswerIds.size &&
+          [...correctAnswerIds].every((id) => selectedAnswerIds.has(id));
+
+        if (isCorrect) totalScore++;
+
+        const submission: QuestionSubmission = {
+          id: `sub-${Date.now()}-${questionIndex}`,
+          sessionId: session.id,
+          questionId: question.id,
+          studentId: session.studentId,
+          selectedOptionIds: selectedOptionIds,
+          isCorrect,
+          score: isCorrect ? 1 : 0,
+          timeSpent: 60,
+          submittedAt: new Date().toISOString(),
+          clientTimestamp: new Date().toISOString(),
+          syncStatus: 'synced',
+        };
+
+        submissions.push(submission);
+      });
+
+      // Update session with all submissions
+      setSession((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          submissions: submissions,
+          score: totalScore,
+          status: 'completed',
+          completedAt: new Date().toISOString(),
+        };
+      });
+
+      // Show success message
+      toast({
+        title: 'Assessment Submitted',
+        description: `You answered ${answeredQuestions.size} out of ${session.totalQuestions} questions.`,
+        variant: 'default',
+      });
+
+      setIsSubmitting(false);
+
+      // Navigate to results
+      setTimeout(() => {
+        router.push(`/student/studentAssessment/studentResults`);
+      }, 1000);
+
+    } catch (error: any) {
+      console.error('Error submitting assessment:', error);
+      
+      setIsSubmitting(false);
+
+      // Show error message
+      toast({
+        title: 'Submission Failed',
+        description: error?.response?.data?.message || 'Failed to submit assessment. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   // Handle next question
   const handleNext = () => {
     if (!session) return;
 
-    setShowFeedback(false);
-    setCurrentFeedback(null);
-    setSelectedOptionIds([]);
-
     if (isLastQuestion) {
-      // Complete assessment
-      setShowSubmitDialog(true);
+      // Move to next question or stay on last
+      return;
     } else {
       // Move to next question
       setSession((prev) => {
@@ -183,11 +355,23 @@ export default function AssessmentSessionPage({ sessionId }: AssessmentSessionPa
     }
   };
 
+  // Handle previous question
+  const handlePrevious = () => {
+    if (!session || session.currentQuestionIndex === 0) return;
+
+    setSession((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        currentQuestionIndex: prev.currentQuestionIndex - 1,
+      };
+    });
+  };
+
   // Handle question navigation from sidebar
   const handleQuestionSelect = (index: number) => {
-    if (!session || showFeedback) return; // Don't allow navigation during feedback
+    if (!session) return;
 
-    setSelectedOptionIds([]);
     setSession((prev) => {
       if (!prev) return prev;
       return {
@@ -197,28 +381,32 @@ export default function AssessmentSessionPage({ sessionId }: AssessmentSessionPa
     });
   };
 
-  // Handle time up
-  const handleTimeUp = () => {
-    setShowSubmitDialog(true);
-  };
-
-  // Handle final submission
-  const handleFinalSubmit = () => {
-    // In real app, submit to API and navigate to results
-    router.push(`/student/assessment/${sessionId}/results`);
-  };
-
   // Handle exit
   const handleExit = () => {
     router.push('/student/dashboard');
   };
 
-  if (loading) {
+  if (loading || questionLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-body1 text-muted-foreground">Loading assessment...</p>
+          <p className="text-body1 text-muted-foreground">
+            {questionLoading ? 'Loading questions...' : 'Loading assessment...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-body1 text-destructive mb-4">{error}</p>
+          <Button variant="outline" onClick={handleExit} className="mt-4">
+            Go Back
+          </Button>
         </div>
       </div>
     );
@@ -263,18 +451,32 @@ export default function AssessmentSessionPage({ sessionId }: AssessmentSessionPa
           </div>
 
           <div className="flex items-center gap-6">
-            <OfflineIndicator
+            {/* <OfflineIndicator
               isOnline={isOnline}
               pendingSyncCount={pendingSyncCount}
-            />
-            <TimerWidget
-              timeRemaining={session.timeRemaining}
-              onTimeUp={handleTimeUp}
-            />
+            /> */}
             <ProgressIndicator
               current={answeredQuestions.size}
               total={session.totalQuestions}
             />
+            <Button
+              size="lg"
+              onClick={() => setShowSubmitDialog(true)}
+              disabled={answeredQuestions.size === 0 || isSubmitting}
+              className="gap-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  Submit Assessment
+                  <Send className="h-4 w-4" />
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </div>
@@ -293,47 +495,37 @@ export default function AssessmentSessionPage({ sessionId }: AssessmentSessionPa
         {/* Question Area */}
         <div className="flex-1 overflow-auto">
           <div className="max-w-4xl mx-auto p-8">
-            {!showFeedback ? (
-              <Card className="p-8">
-                <QuestionDisplay
-                  question={currentQuestion}
-                  selectedOptionIds={selectedOptionIds}
-                  onOptionSelect={handleOptionSelect}
-                  questionNumber={session.currentQuestionIndex + 1}
-                  totalQuestions={session.totalQuestions}
-                  disabled={showFeedback}
-                />
-
-                {/* Submit Button */}
-                <div className="mt-8 flex justify-end">
-                  <Button
-                    size="lg"
-                    onClick={handleSubmit}
-                    disabled={!canSubmit || isSubmitting}
-                    className="gap-2"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                        Submitting...
-                      </>
-                    ) : (
-                      <>
-                        Submit Answer
-                        <Send className="h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </Card>
-            ) : (
-              <FeedbackPanel
-                feedback={currentFeedback}
+            <Card className="p-8">
+              <QuestionDisplay
                 question={currentQuestion}
-                onNext={handleNext}
-                isLastQuestion={isLastQuestion}
+                selectedOptionIds={currentQuestionAnswers}
+                onOptionSelect={handleOptionSelect}
+                questionNumber={session.currentQuestionIndex + 1}
+                totalQuestions={session.totalQuestions}
+                disabled={false}
               />
-            )}
+
+              {/* Navigation Buttons */}
+              <div className="mt-8 flex justify-between">
+                <Button
+                  variant="outline"
+                  onClick={handlePrevious}
+                  disabled={session.currentQuestionIndex === 0}
+                  className="gap-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <Button
+                  onClick={handleNext}
+                  disabled={isLastQuestion ?? false}
+                  className="gap-2"
+                >
+                  Next
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </Card>
           </div>
         </div>
       </div>
@@ -346,16 +538,25 @@ export default function AssessmentSessionPage({ sessionId }: AssessmentSessionPa
             <DialogDescription>
               You have answered {answeredQuestions.size} out of {session.totalQuestions}{' '}
               questions. Are you sure you want to submit your assessment?
+              {answeredQuestions.size < session.totalQuestions && (
+                <span className="block mt-2 text-amber-600 font-medium">
+                  Warning: You have not answered all questions!
+                </span>
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSubmitDialog(false)}>
               Review Answers
             </Button>
-            <Button onClick={handleFinalSubmit}>Submit Assessment</Button>
+            <Button onClick={handleSubmitAssessment} disabled={isSubmitting}>
+              {isSubmitting ? 'Submitting...' : 'Submit Assessment'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      <Toaster />
     </div>
   );
 }

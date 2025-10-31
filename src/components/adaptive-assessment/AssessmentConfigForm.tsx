@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { api } from '@/utils/axios.config';
 import { useBootcamp } from '@/lib/hooks/useBootcamp';
+import TypingSkeleton from './LoadingSkeletion';
 
 // Available topics for the assessment
 const AVAILABLE_TOPICS = [
@@ -184,6 +185,8 @@ export function AssessmentConfigForm({
   console.log(bootcamps)
 
   return (
+    <>
+
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -364,5 +367,6 @@ export function AssessmentConfigForm({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
