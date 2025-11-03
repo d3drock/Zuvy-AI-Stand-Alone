@@ -89,7 +89,7 @@ export default function StudentDashboard() {
           </div>
         </Card>
 
-        <Card className="p-4 border-l-4 border-l-warning">
+        {/* <Card className="p-4 border-l-4 border-l-warning">
           <div className="flex items-center gap-3">
             <Clock className="h-5 w-5 text-warning" />
             <div>
@@ -97,7 +97,7 @@ export default function StudentDashboard() {
               <p className="text-h5 font-semibold">{inProgressSessions.length}</p>
             </div>
           </div>
-        </Card>
+        </Card> */}
 
         <Card className="p-4 border-l-4 border-l-success">
           <div className="flex items-center gap-3">
@@ -109,7 +109,7 @@ export default function StudentDashboard() {
           </div>
         </Card>
 
-        <Card className="p-4 border-l-4 border-l-primary">
+        {/* <Card className="p-4 border-l-4 border-l-primary">
           <div className="flex items-center gap-3">
             <BarChart3 className="h-5 w-5 text-primary" />
             <div>
@@ -117,77 +117,73 @@ export default function StudentDashboard() {
               <p className="text-h5 font-semibold">{uniqueTopics.size}</p>
             </div>
           </div>
-        </Card>
+        </Card> */}
       </div>
 
       {/* Tabs */}
-     
-
-   
-
-         <div className="space-y-4">
-  {loading ? (
-    <Card className="p-12 text-center">
-      <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-spin" />
-      <h3 className="font-heading text-body1 font-semibold mb-2">
-        Loading assessments...
-      </h3>
-      <p className="text-body2 text-muted-foreground">
-        Please wait a moment.
-      </p>
-    </Card>
-  ) : assessments?.length === 0 ? (
-    <Card className="p-12 text-center">
-      <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-      <h3 className="font-heading text-body1 font-semibold mb-2">
-        No assessments available
-      </h3>
-      <p className="text-body2 text-muted-foreground">
-        Please check back later.
-      </p>
-    </Card>
-  ) : (
-    assessments.map((assessment) => (
-      <Card
-        key={assessment.id}
-        className="p-6 border-l-4 border-l-primary hover:shadow-8dp transition-shadow"
-      >
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h3 className="font-heading text-body1 font-semibold">
-                {assessment.title}
+        <div className="space-y-4">
+          {loading ? (
+            <Card className="p-12 text-center">
+              <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-spin" />
+              <h3 className="font-heading text-body1 font-semibold mb-2">
+                Loading assessments...
               </h3>
-              <Badge className="bg-primary">Available</Badge>
-            </div>
+              <p className="text-body2 text-muted-foreground">
+                Please wait a moment.
+              </p>
+            </Card>
+          ) : assessments?.length === 0 ? (
+            <Card className="p-12 text-center">
+              <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="font-heading text-body1 font-semibold mb-2">
+                No assessments available
+              </h3>
+              <p className="text-body2 text-muted-foreground">
+                Please check back later.
+              </p>
+            </Card>
+          ) : (
+            assessments.map((assessment) => (
+              <Card
+                key={assessment.id}
+                className="p-6 border-l-4 border-l-primary hover:shadow-8dp transition-shadow"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="font-heading text-body1 font-semibold">
+                        {assessment.title}
+                      </h3>
+                      <Badge className="bg-primary">Available</Badge>
+                    </div>
 
-            <p className="text-body2 text-muted-foreground mb-3">
-              {assessment.description}
-            </p>
+                    <p className="text-body2 text-muted-foreground mb-3">
+                      {assessment.description}
+                    </p>
 
-            {/* Stats */}
-            <div className="flex items-center gap-6 text-body2 text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4" />
-                <span>{assessment.totalNumberOfQuestions} Questions</span>
-              </div>
+                    {/* Stats */}
+                    <div className="flex items-center gap-6 text-body2 text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span>{assessment.totalNumberOfQuestions} Questions</span>
+                      </div>
 
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                <span>Difficulty: {assessment.difficulty}</span>
-              </div>
-            </div>
-          </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        <span>Difficulty: {assessment.difficulty}</span>
+                      </div>
+                    </div>
+                  </div>
 
-          <Button onClick={() => handleStartAssessment(assessment.id)} className="flex items-center justify-center">
-            <span>Start Assessment</span>
-            <Play className="h-2 w-2 mb-1 " />
-          </Button>
+                  <Button onClick={() => handleStartAssessment(assessment.id)} className="flex items-center justify-center">
+                    <span>Start Assessment</span>
+                    <Play className="h-2 w-2 mb-1 " />
+                  </Button>
+                </div>
+              </Card>
+            ))
+          )}
         </div>
-      </Card>
-    ))
-  )}
-</div>
 
 
 
