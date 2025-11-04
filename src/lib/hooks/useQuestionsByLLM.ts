@@ -40,7 +40,7 @@ interface UseQuestionsByLLMReturn {
   totalQuestions: number
 }
 
-export function useQuestionsByLLM(): UseQuestionsByLLMReturn {
+export function useQuestionsByLLM({sessionId}: {sessionId: string}): UseQuestionsByLLMReturn {
   const [questions, setQuestions] = useState<QuestionByLLM[]>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
@@ -50,7 +50,7 @@ export function useQuestionsByLLM(): UseQuestionsByLLMReturn {
       setLoading(true)
       setError(null)
 
-      const response = await api.get<QuestionsByLLMApiResponse>('/questions-by-llm?aiAssessmentId=1')
+      const response = await api.get<QuestionsByLLMApiResponse>(`/questions-by-llm?aiAssessmentId=${sessionId}`)
 
       setQuestions(response.data)
     } catch (err: any) {

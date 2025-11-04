@@ -263,18 +263,18 @@ export function AssessmentConfigForm({
     console.log('dataToSave:', dataToSave);
 
     setLoading(true);
-    // try {
-    //   // await api.post('/content/generate-mcqs', dataToSave);
-    //   await api.post('/ai-assessment', dataToSave);
-    //   await api.post('/ai-assessment/generate/all', { aiAssessmentId: assessmentId });
-    //   setLoading(false);
-    // }
-    // catch(error){
-    //   setLoading(false);
-    //   console.error('Error saving assessment config:', error);
-    // }
+    try {
+      // await api.post('/content/generate-mcqs', dataToSave);
+      await api.post('/ai-assessment', dataToSave);
+      // await api.post('/ai-assessment/generate/all', { aiAssessmentId: assessmentId });
+      setLoading(false);
+    }
+    catch(error){
+      setLoading(false);
+      console.error('Error saving assessment config:', error);
+    }
 
-    // onSave(dataToSave);
+    onSave(dataToSave);
     onOpenChange(false);
     setFormData({
       title: '',

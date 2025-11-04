@@ -11,11 +11,11 @@ export interface AiAssessment {
   bootcampId: number | null;
   audience: string | null;
   difficulty: string | null;
-  topics: {
-    topic: string;
-    count: number;
-  }[];
-  // questions?: any[]
+  topics: Record<string, number>; // Changed to match API response: { "Loops": 1, "Objects": 1 }
+  totalNumberOfQuestions: number;
+  totalQuestionsWithBuffer: number;
+  startDatetime: string;
+  endDatetime: string;
   createdAt: string;
   updatedAt: string;
 }

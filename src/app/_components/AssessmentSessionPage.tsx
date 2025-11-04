@@ -62,10 +62,11 @@ export default function AssessmentSessionPage({ sessionId }: AssessmentSessionPa
   const router = useRouter();
   const { toast } = useToast();
 
+
   // Session state
   const [session, setSession] = useState<AssessmentSession | null>(null);
   const [loading, setLoading] = useState(true);
-  const { questions: apiQuestions, loading: questionLoading, error, refetch } = useQuestionsByLLM();
+  const { questions: apiQuestions, loading: questionLoading, error, refetch } = useQuestionsByLLM({sessionId});
   const [adaptiveQuestions, setAdaptiveQuestions] = useState<AdaptiveQuestion[]>([]);
   // Store mapping between question index and original API question
   const [questionMapping, setQuestionMapping] = useState<Map<number, QuestionByLLM>>(new Map());
