@@ -36,6 +36,8 @@ import { useBootcamp } from '@/lib/hooks/useBootcamp';
 import TypingSkeleton from './LoadingSkeletion';
 import { useAiAssessment } from '@/lib/hooks/useAiAssessment';
 import { cn } from '@/lib/utils';
+import "../../app/style.css";
+import { Loader2 } from 'lucide-react';
 
 interface Bootcamp {
   id: number;
@@ -597,10 +599,27 @@ export function AssessmentConfigForm({
               !formData.topics ||
               formData.topics.length === 0 ||
               !formData.startDate ||
-              !formData.endDate
+              !formData.endDate || loading
             }
           >
             {!loading ? 'Create Assessment' : 'Loading...'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+     {/* Loading / Generating Modal */}
+    <Dialog open={loading} onOpenChange={(val) => setLoading(val)}>
+      <DialogContent className="max-w-lg">
+        <div className="flex flex-col items-center justify-center py-8">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <h3 className="mt-4 text-lg font-semibold">Generating MCQs</h3>
+          <p className="mt-2 text-sm text-muted-foreground text-center px-4">
+            AI is creating multiple choice questions. This may take a few minutes. You can cancel to stop this operation.
+          </p>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setLoading(false)}>
+            Cancel
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,0 +1,157 @@
+/* .loader-card {
+  background: white;
+  border-radius: 12px;
+  padding: 40px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 300px;
+  justify-content: center;
+} */
+
+/* Loader 1: Document with Sparkles */
+.doc-loader {
+  position: relative;
+  width: 80px;
+  height: 100px;
+}
+
+.document {
+  width: 80px;
+  height: 100px;
+  background: #2d6a4f;
+  border-radius: 8px 8px 8px 8px;
+  position: relative;
+  animation: docFloat 3s ease-in-out infinite;
+}
+
+.document::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-left: 20px solid transparent;
+  border-top: 20px solid #f5f5f5;
+  border-radius: 0 8px 0 0;
+}
+
+.doc-lines {
+  position: absolute;
+  top: 30px;
+  left: 15px;
+  right: 15px;
+}
+
+.doc-line {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.4);
+  margin: 8px 0;
+  border-radius: 2px;
+  animation: lineGrow 1.5s ease-in-out infinite;
+}
+
+.doc-line:nth-child(2) {
+  animation-delay: 0.3s;
+  width: 80%;
+}
+.doc-line:nth-child(3) {
+  animation-delay: 0.6s;
+  width: 60%;
+}
+
+@keyframes lineGrow {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scaleX(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes docFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.sparkles {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  top: -10px;
+  left: -20px;
+}
+
+.sparkle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #ffd700;
+  border-radius: 50%;
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+.sparkle:nth-child(1) {
+  top: 10%;
+  left: 10%;
+  animation-delay: 0s;
+}
+.sparkle:nth-child(2) {
+  top: 20%;
+  right: 10%;
+  animation-delay: 0.4s;
+}
+.sparkle:nth-child(3) {
+  bottom: 30%;
+  left: 20%;
+  animation-delay: 0.8s;
+}
+.sparkle:nth-child(4) {
+  bottom: 20%;
+  right: 20%;
+  animation-delay: 1.2s;
+}
+
+@keyframes sparkle {
+  0%,
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.loading-dots::after {
+  content: "";
+  animation: dots 1.5s steps(4) infinite;
+}
+
+@keyframes dots {
+  0%,
+  20% {
+    content: "";
+  }
+  40% {
+    content: ".";
+  }
+  60% {
+    content: "..";
+  }
+  80%,
+  100% {
+    content: "...";
+  }
+}
