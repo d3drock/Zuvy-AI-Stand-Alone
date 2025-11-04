@@ -39,17 +39,17 @@ function Calendar({
         day: cn(
           "h-9 w-9 text-center text-sm p-0 relative",
           buttonVariants({ variant: "ghost" }),
-          "font-normal aria-selected:opacity-100"
+          "font-normal aria-selected:opacity-100 hover:bg-success-light hover:text-success"
         ),
         day_button: "h-9 w-9 p-0 font-normal",
         selected:
           "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-        today: "bg-accent text-accent-foreground",
+        today: "bg-success-light text-success",
         outside:
-          "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
+          "day-outside text-muted-foreground opacity-50 aria-selected:bg-success-light/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
         disabled: "text-muted-foreground opacity-50",
         range_middle:
-          "aria-selected:bg-accent aria-selected:text-accent-foreground",
+          "aria-selected:bg-success-light aria-selected:text-success",
         hidden: "invisible",
         ...classNames,
       }}

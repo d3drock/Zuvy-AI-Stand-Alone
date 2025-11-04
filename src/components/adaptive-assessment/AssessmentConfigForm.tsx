@@ -1,13 +1,27 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -16,10 +30,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { useToast } from '@/components/ui/use-toast';
 import { api } from '@/utils/axios.config';
 import { useBootcamp } from '@/lib/hooks/useBootcamp';
 import TypingSkeleton from './LoadingSkeletion';
 import { useAiAssessment } from '@/lib/hooks/useAiAssessment';
+import { cn } from '@/lib/utils';
 
 interface Bootcamp {
   id: number;
@@ -66,11 +82,11 @@ interface TopicWithCount {
 interface AssessmentFormData {
   title: string;
   description: string;
-  difficulty: string;
   topics: TopicWithCount[];
-  audience: string;
   bootcampId: number | null;
   assessmentId?: number | null;
+  startDate: Date | undefined;
+  endDate: Date | undefined;
 }
 
 interface AssessmentConfigFormProps {
@@ -90,22 +106,24 @@ export function AssessmentConfigForm({
   bootcamps,
   bootcampsLoading,
 }: AssessmentConfigFormProps) {
+  const { toast } = useToast();
   const [formData, setFormData] = useState<AssessmentFormData>({
     title: '',
     description: '',
-    difficulty: 'Medium',
     topics: [],
-    audience: '',
     bootcampId: null,
-  assessmentId: null,
+    assessmentId: null,
+    startDate: undefined,
+    endDate: undefined,
   });
+  const [dateErrors, setDateErrors] = useState({ startDate: '', endDate: '' });
     const [selectedBootcampForAssessment, setSelectedBootcampForAssessment] = useState<number | null>(null);
-    const { assessment } = useAiAssessment({ bootcampId: selectedBootcampForAssessment });
+    // const { assessment } = useAiAssessment({ bootcampId: selectedBootcampForAssessment });
     const [assessmentId, setAssessmentId] = useState<number | null>(null);
 
 
     console.log(bootcamps)
-    console.log('assessment', assessment)
+    // console.log('assessment', assessment)
 
 
   const [newTopic, setNewTopic] = useState('');
@@ -119,22 +137,37 @@ export function AssessmentConfigForm({
     setFormData((prev) => ({ ...prev, description: value }));
   };
 
-  const handleDifficultyChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, difficulty: value }));
-  };
-
-  const handleAudienceChange = (value: string) => {
-    const parsedId = value ? parseInt(value) : null;
-    setAssessmentId(parsedId);
-    const selected = assessment?.find((a: any) => String(a.id) === String(value));
-    setFormData((prev) => ({ ...prev, audience: selected?.title || '' }));
+  const handleDateChange = (field: 'startDate' | 'endDate', date: Date | undefined) => {
+    setFormData((prev) => ({ ...prev, [field]: date }));
+    
+    // Clear error when user selects a date
+    setDateErrors((prev) => ({ ...prev, [field]: '' }));
+    
+    // Validate dates
+    if (field === 'startDate' && date) {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      if (date < now) {
+        setDateErrors((prev) => ({ ...prev, startDate: 'Start date cannot be in the past' }));
+      } else if (formData.endDate && date >= formData.endDate) {
+        setDateErrors((prev) => ({ ...prev, endDate: 'End date must be after start date' }));
+      } else {
+        setDateErrors((prev) => ({ ...prev, endDate: '' }));
+      }
+    }
+    
+    if (field === 'endDate' && date) {
+      if (formData.startDate && date <= formData.startDate) {
+        setDateErrors((prev) => ({ ...prev, endDate: 'End date must be after start date' }));
+      }
+    }
   };
 
   const handleBootcampChange = (value: string) => {
     console.log("Selected Bootcamp ID:", value);
     const bootcampId = value ? parseInt(value) : null;
     setSelectedBootcampForAssessment(bootcampId);
-    setFormData((prev) => ({ ...prev, bootcampId, assessmentId: null, audience: '' }));
+    setFormData((prev) => ({ ...prev, bootcampId, assessmentId: null }));
   };
 
   const handleAssessmentChange = (value: string) => {
@@ -165,6 +198,52 @@ export function AssessmentConfigForm({
   };
 
   const handleSave = async () => {
+    // Validate required fields
+    if (!formData.title || !formData.description || formData.topics.length === 0 || !formData.bootcampId) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fill in all required fields',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!formData.startDate || !formData.endDate) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please select both start date and end date',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate dates
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    
+    if (formData.startDate < now) {
+      setDateErrors((prev) => ({ ...prev, startDate: 'Start date cannot be in the past' }));
+      toast({
+        title: 'Validation Error',
+        description: 'Start date cannot be in the past',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (formData.endDate <= formData.startDate) {
+      setDateErrors((prev) => ({ ...prev, endDate: 'End date must be after start date' }));
+      toast({
+        title: 'Validation Error',
+        description: 'End date must be after start date',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Clear any existing date errors
+    setDateErrors({ startDate: '', endDate: '' });
+
     // Transform topics array to object format
     const topicsObject: { [key: string]: number } = {};
     formData.topics.forEach((t) => {
@@ -175,36 +254,36 @@ export function AssessmentConfigForm({
       bootcampId: formData.bootcampId,
       title: formData.title,
       description: formData.description,
-      difficulty: formData.difficulty,
       topics: topicsObject,
-      audience: formData.audience,
       totalNumberOfQuestions: formData.topics.reduce((sum, t) => sum + t.count, 0),
+      startDatetime: formData.startDate.toISOString(),
+      endDatetime: formData.endDate.toISOString(),
     };
 
     console.log('dataToSave:', dataToSave);
 
     setLoading(true);
-    try {
-      // await api.post('/content/generate-mcqs', dataToSave);
-      await api.post('/ai-assessment', dataToSave);
-      await api.post('/ai-assessment/generate/all', { aiAssessmentId: assessmentId });
-      setLoading(false);
-    }
-    catch(error){
-      setLoading(false);
-      console.error('Error saving assessment config:', error);
-    }
+    // try {
+    //   // await api.post('/content/generate-mcqs', dataToSave);
+    //   await api.post('/ai-assessment', dataToSave);
+    //   await api.post('/ai-assessment/generate/all', { aiAssessmentId: assessmentId });
+    //   setLoading(false);
+    // }
+    // catch(error){
+    //   setLoading(false);
+    //   console.error('Error saving assessment config:', error);
+    // }
 
     // onSave(dataToSave);
     onOpenChange(false);
     setFormData({
       title: '',
       description: '',
-      difficulty: 'Medium',
       topics: [],
-      audience: '',
       bootcampId: null,
       assessmentId: null,
+      startDate: undefined,
+      endDate: undefined,
     });
   };
 
@@ -212,10 +291,6 @@ export function AssessmentConfigForm({
   const availableTopicsFiltered = AVAILABLE_TOPICS.filter(
     (t) => !selectedTopicNames.includes(t)
   );
-
-  console.log(bootcamps)
-
-  console.log('formData', formData);
 
   return (
     <>
@@ -231,7 +306,27 @@ export function AssessmentConfigForm({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-6 py-4 font-normal">
+
+               {/* Bootcamp Selection */}
+          <div className="space-y-2">
+            <Label>Bootcamp *</Label>
+            <Select
+              value={formData.bootcampId?.toString() || ''}
+              onValueChange={(value) => handleBootcampChange(value)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a bootcamp..." />
+              </SelectTrigger>
+              <SelectContent>
+                {bootcamps.map((bootcamp) => (
+                  <SelectItem key={bootcamp.id} value={bootcamp.id.toString()}>
+                    {bootcamp.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           {/* Title */}
           <div className="space-y-2">
             <Label>Assessment Title *</Label>
@@ -253,24 +348,84 @@ export function AssessmentConfigForm({
             />
           </div>
 
-          {/* Bootcamp Selection */}
+          {/* Start Date */}
           <div className="space-y-2">
-            <Label>Bootcamp *</Label>
-            <select
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              value={formData.bootcampId || ''}
-              onChange={(e) => handleBootcampChange(e.target.value)}
-            >
-              <option value="">Select a bootcamp...</option>
-              {bootcamps.map((bootcamp) => (
-                <option key={bootcamp.id} value={bootcamp.id}>
-                  {bootcamp.name}
-                </option>
-              ))}
-            </select>
+            <Label>Start Date *</Label>
+            <Popover  >
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !formData.startDate && "text-muted-foreground",
+                    dateErrors.startDate && "border-red-500"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.startDate ? format(formData.startDate, 'PPP') : <span>Pick start date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={formData.startDate}
+                  onSelect={(date) => handleDateChange('startDate', date)}
+                  disabled={(date) => {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    return date < today;
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            {dateErrors.startDate && (
+              <p className="text-sm text-red-500">{dateErrors.startDate}</p>
+            )}
           </div>
 
-          {
+          {/* End Date */}
+          <div className="space-y-2">
+            <Label>End Date *</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !formData.endDate && "text-muted-foreground",
+                    dateErrors.endDate && "border-red-500"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.endDate ? format(formData.endDate, 'PPP') : <span>Pick end date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={formData.endDate}
+                  onSelect={(date) => handleDateChange('endDate', date)}
+                  disabled={(date) => {
+                    if (!formData.startDate) {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      return date < today;
+                    }
+                    return date <= formData.startDate;
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            {dateErrors.endDate && (
+              <p className="text-sm text-red-500">{dateErrors.endDate}</p>
+            )}
+          </div>
+
+     
+
+          {/* {
             formData.bootcampId && assessment && assessment?.length > 0 &&
              (
               <div className="space-y-2">
@@ -291,10 +446,10 @@ export function AssessmentConfigForm({
               </select>
             </div>
             )
-          }
+          } */}
 
           {/* Difficulty Selection */}
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label>Difficulty Level *</Label>
             <select
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -305,25 +460,28 @@ export function AssessmentConfigForm({
               <option value="Medium">Medium</option>
               <option value="Hard">Hard</option>
             </select>
-          </div>
+          </div> */}
 
           {/* Topics with Question Count */}
           <Card className="p-4 bg-muted/50">
             <Label className="mb-3 block">Topics with Question Count *</Label>
             <div className="space-y-3">
               <div className="flex gap-2">
-                <select
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                <Select
                   value={newTopic}
-                  onChange={(e) => setNewTopic(e.target.value)}
+                  onValueChange={(value) => setNewTopic(value)}
                 >
-                  <option value="">Select a topic...</option>
-                  {availableTopicsFiltered.map((topic) => (
-                    <option key={topic} value={topic}>
-                      {topic}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a topic..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableTopicsFiltered.map((topic) => (
+                      <SelectItem key={topic} value={topic}>
+                        {topic}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Input
                   type="number"
                   min={1}
@@ -361,7 +519,7 @@ export function AssessmentConfigForm({
               )}
 
               {(!formData.topics || formData.topics.length === 0) && (
-                <p className="text-sm text-muted-foreground italic">
+                <p className="text-sm italic">
                   No topics selected. Add at least one topic with question count.
                 </p>
               )}
@@ -384,10 +542,6 @@ export function AssessmentConfigForm({
             <h4 className="font-semibold text-body2 mb-3">Assessment Summary</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Difficulty:</span>
-                <span className="font-medium">{formData.difficulty}</span>
-              </div>
-              <div className="flex justify-between">
                 <span className="text-muted-foreground">Topics:</span>
                 <span className="font-medium">
                   {formData.topics?.length || 0} selected
@@ -399,6 +553,34 @@ export function AssessmentConfigForm({
                   {formData.topics.reduce((sum, t) => sum + t.count, 0)}
                 </span>
               </div>
+              {formData.startDate && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Start Date:</span>
+                  <span className="font-medium">
+                    {new Date(formData.startDate).toLocaleString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                </div>
+              )}
+              {formData.endDate && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">End Date:</span>
+                  <span className="font-medium">
+                    {new Date(formData.endDate).toLocaleString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                </div>
+              )}
             </div>
           </Card>
         </div>
@@ -412,9 +594,10 @@ export function AssessmentConfigForm({
             disabled={
               !formData.title ||
               !formData.bootcampId ||
-              !formData.difficulty ||
               !formData.topics ||
-              formData.topics.length === 0
+              formData.topics.length === 0 ||
+              !formData.startDate ||
+              !formData.endDate
             }
           >
             {!loading ? 'Create Assessment' : 'Loading...'}

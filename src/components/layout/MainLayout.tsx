@@ -36,22 +36,22 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         pathname === `/admin/admin-assessment-management` ||
         pathname.startsWith(`/admin/admin-assessment-management/`),
     },
-    {
-      name: "Question Bank",
-      href: `/admin/questionbank`,
-      icon: Database,
-      active: (pathname: string) =>
-        pathname === `/admin/questionbank` ||
-        pathname.startsWith(`/admin/questionbank/`),
-    },
-    {
-      name: "Analytics Dashboard",
-      href: `/admin/analytics`,
-      icon: Settings,
-      active: (pathname: string) =>
-        pathname === `/admin/analytics` ||
-        pathname.startsWith(`/admin/analytics/`),
-    },
+    // {
+    //   name: "Question Bank",
+    //   href: `/admin/questionbank`,
+    //   icon: Database,
+    //   active: (pathname: string) =>
+    //     pathname === `/admin/questionbank` ||
+    //     pathname.startsWith(`/admin/questionbank/`),
+    // },
+    // {
+    //   name: "Analytics Dashboard",
+    //   href: `/admin/analytics`,
+    //   icon: Settings,
+    //   active: (pathname: string) =>
+    //     pathname === `/admin/analytics` ||
+    //     pathname.startsWith(`/admin/analytics/`),
+    // },
   ];
 
   const Logout = async () => {

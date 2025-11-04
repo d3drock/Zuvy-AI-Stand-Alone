@@ -6,6 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { AssessmentConfigForm } from '@/components/adaptive-assessment/AssessmentConfigForm';
 import TypingSkeleton from '@/components/adaptive-assessment/LoadingSkeletion';
 import { useAiAssessment } from '@/lib/hooks/useAiAssessment';
@@ -116,18 +123,22 @@ export default function AssessmentManagementPage() {
 
         {/* Bootcamp Filter */}
         <div className="mt-4 max-w-md">
-          <select
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            value={selectedBootcampId || ''}
-            onChange={(e) => setSelectedBootcampId(e.target.value ? parseInt(e.target.value) : null)}
+          <Select
+            value={selectedBootcampId?.toString() || undefined}
+            onValueChange={(value) => setSelectedBootcampId(value === 'all' ? null : parseInt(value))}
           >
-            <option value="">All Bootcamps</option>
-            {bootcamps.map((bootcamp) => (
-              <option key={bootcamp.id} value={bootcamp.id}>
-                {bootcamp.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="All Bootcamps" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Bootcamps</SelectItem>
+              {bootcamps.map((bootcamp) => (
+                <SelectItem key={bootcamp.id} value={bootcamp.id.toString()}>
+                  {bootcamp.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
