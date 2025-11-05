@@ -123,7 +123,7 @@ const Page = (props: Props) => {
         <h1 className="font-heading text-h5 text-foreground mb-2">
           My Assessments
         </h1>
-        <p className="text-body2 text-muted-foreground">
+        <p className="text-body2">
           Complete your assessments and track your progress
         </p>
       </div>
@@ -134,7 +134,7 @@ const Page = (props: Props) => {
           <div className="flex items-center gap-3">
             <BookOpen className="h-5 w-5 text-primary" />
             <div>
-              <p className="text-body2 text-muted-foreground">Total Assessments</p>
+              <p className="text-body2 ">Total Assessments</p>
               <p className="text-h5 font-semibold">{totalAssessments}</p>
             </div>
           </div>
@@ -144,7 +144,7 @@ const Page = (props: Props) => {
           <div className="flex items-center gap-3">
             <Clock className="h-5 w-5 text-warning" />
             <div>
-              <p className="text-body2 text-muted-foreground">Active</p>
+              <p className="text-body2">Active</p>
               <p className="text-h5 font-semibold">{activeAssessments}</p>
             </div>
           </div>
@@ -154,7 +154,7 @@ const Page = (props: Props) => {
           <div className="flex items-center gap-3">
             <CheckCircle2 className="h-5 w-5 text-success" />
             <div>
-              <p className="text-body2 text-muted-foreground">Submitted</p>
+              <p className="text-body2 ">Submitted</p>
               <p className="text-h5 font-semibold">{submittedAssessments}</p>
             </div>
           </div>
@@ -164,7 +164,7 @@ const Page = (props: Props) => {
           <div className="flex items-center gap-3">
             <TrendingUp className="h-5 w-5 text-primary" />
             <div>
-              <p className="text-body2 text-muted-foreground">Topics Covered</p>
+              <p className="text-body2 ">Topics Covered</p>
               <p className="text-h5 font-semibold">{uniqueTopics.size}</p>
             </div>
           </div>
@@ -175,11 +175,11 @@ const Page = (props: Props) => {
       <div className="space-y-4">
         {loading ? (
           <Card className="p-8 text-center">
-            <Clock className="h-10 w-10 text-muted-foreground mx-auto mb-3 animate-spin" />
+            <Clock className="h-10 w-10  mx-auto mb-3 animate-spin" />
             <h3 className="font-heading text-body1 font-semibold mb-1">
               Loading assessments...
             </h3>
-            <p className="text-body2 text-muted-foreground">
+            <p className="text-body2">
               Please wait a moment.
             </p>
           </Card>
@@ -189,17 +189,17 @@ const Page = (props: Props) => {
             <h3 className="font-heading text-body1 font-semibold mb-1">
               Error Loading Assessments
             </h3>
-            <p className="text-body2 text-muted-foreground mb-3">
+            <p className="text-body2  mb-3">
               {error}
             </p>
           </Card>
         ) : !assessments || assessments.length === 0 ? (
           <Card className="p-8 text-center">
-            <BookOpen className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+            <BookOpen className="h-10 w-10  mx-auto mb-3" />
             <h3 className="font-heading text-body1 font-semibold mb-1">
               No assessments available
             </h3>
-            <p className="text-body2 text-muted-foreground">
+            <p className="text-body2 ">
               There are no assessments for this bootcamp yet.
             </p>
           </Card>
@@ -232,30 +232,15 @@ const Page = (props: Props) => {
                   {/* Header Section */}
                   <div className="flex items-start justify-between gap-4 mb-4">
                     <div className="flex-1 space-y-2">
-                      {/* Title & Status */}
+                      {/* Title */}
                       <div className="flex items-start gap-3">
                         <div className="flex-1">
                           <h3 className="font-heading text-lg font-bold text-foreground mb-1 group-hover:text-secondary transition-colors duration-300">
                             {item.title}
                           </h3>
-                          <p className="text-sm text-muted-foreground line-clamp-2">
+                          <p className="text-sm line-clamp-2">
                             {item.description}
                           </p>
-                        </div>
-                        
-                        {/* Status Badge */}
-                        <div className={`
-                          px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide
-                          ${isSubmitted
-                            ? 'bg-success/20 text-success border border-success/30'
-                            : isAvailable 
-                            ? 'bg-secondary/20 text-secondary border border-secondary/30' 
-                            : new Date() < new Date(item.startDatetime)
-                            ? 'bg-info/20 text-info border border-info/30'
-                            : 'bg-muted text-muted-foreground border border-muted'
-                          }
-                        `}>
-                          {status.label}
                         </div>
                       </div>
 
@@ -277,47 +262,61 @@ const Page = (props: Props) => {
                       </div>
                     </div>
 
-                    {/* CTA Button */}
-                    <div className="flex-shrink-0">
+                    {/* CTA Button Section */}
+                    <div className="flex-shrink-0 flex flex-col items-end gap-2">
+                      {/* Status Badge */}
+                      <div className={`
+                        px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide
+                        ${isSubmitted
+                          ? 'bg-success/20 text-success border border-success/30'
+                          : isAvailable 
+                          ? 'bg-secondary/20 text-secondary border border-secondary/30' 
+                          : new Date() < new Date(item.startDatetime)
+                          ? 'bg-info/20 text-info border border-info/30'
+                          : 'bg-muted border border-muted'
+                        }
+                      `}>
+                        {status.label}
+                      </div>
+
+                      {/* Action Button */}
                       {isSubmitted ? (
                         <Button
                           onClick={() => handleViewResults(item.id)}
                           size="default"
-                          className="min-w-[130px] h-10 text-sm font-semibold bg-gradient-to-r from-success to-success-dark hover:from-success-dark hover:to-success shadow-md shadow-success/20 hover:shadow-lg hover:shadow-success/30 transition-all duration-300 group/btn"
+                          className="w-[140px] h-10 text-sm font-semibold bg-gradient-to-r from-success to-success-dark hover:from-success-dark hover:to-success shadow-md shadow-success/20 hover:shadow-lg hover:shadow-success/30 transition-all duration-300 group/btn"
                         >
-                          <CheckCircle2 className="h-4 w-4 mr-1.5 group-hover/btn:scale-110 transition-transform" />
+                          <CheckCircle2 className="h-4 w-4 mr-2 group-hover/btn:scale-110 transition-transform" />
                           <span>View Results</span>
+                        </Button>
+                      ) : isAvailable ? (
+                        <Button
+                          onClick={() => handleStartAssessment(item.id)}
+                          size="default"
+                          className="w-[140px] h-10 text-sm font-semibold bg-gradient-to-r from-secondary to-secondary-dark hover:from-secondary-dark hover:to-secondary shadow-md shadow-secondary/20 hover:shadow-lg hover:shadow-secondary/30 transition-all duration-300 group/btn"
+                        >
+                          <Play className="h-4 w-4 mr-2 group-hover/btn:scale-110 transition-transform" />
+                          <span>Start Now</span>
+                        </Button>
+                      ) : new Date() < new Date(item.startDatetime) ? (
+                        <Button
+                          disabled
+                          size="default"
+                          variant="outline"
+                          className="w-[140px] h-10 text-sm font-semibold border-info/30 text-info bg-info/5 cursor-not-allowed"
+                        >
+                          <Clock className="h-4 w-4 mr-2" />
+                          <span>Coming Soon</span>
                         </Button>
                       ) : (
                         <Button
-                          onClick={() => handleStartAssessment(item.id)}
-                          disabled={!isAvailable}
+                          disabled
                           size="default"
-                          className={`
-                            min-w-[130px] h-10 text-sm font-semibold
-                            ${isAvailable 
-                              ? 'bg-gradient-to-r from-secondary to-secondary-dark hover:from-secondary-dark hover:to-secondary shadow-md shadow-secondary/20 hover:shadow-lg hover:shadow-secondary/30' 
-                              : 'bg-muted cursor-not-allowed'
-                            }
-                            transition-all duration-300 group/btn
-                          `}
+                          variant="outline"
+                          className="w-[140px] h-10 text-sm font-semibold border-muted text-muted-foreground bg-muted/30 cursor-not-allowed"
                         >
-                          {isAvailable ? (
-                            <>
-                              <Play className="h-4 w-4 mr-1.5 group-hover/btn:scale-110 transition-transform" />
-                              <span>Start Now</span>
-                            </>
-                          ) : new Date() < new Date(item.startDatetime) ? (
-                            <>
-                              <Clock className="h-4 w-4 mr-1.5" />
-                              <span>Coming Soon</span>
-                            </>
-                          ) : (
-                            <>
-                              <AlertCircle className="h-4 w-4 mr-1.5" />
-                              <span>Ended</span>
-                            </>
-                          )}
+                          <AlertCircle className="h-4 w-4 mr-2" />
+                          <span>Ended</span>
                         </Button>
                       )}
                     </div>
@@ -327,33 +326,33 @@ const Page = (props: Props) => {
                   <div className="grid grid-cols-4 gap-3 p-4 rounded-md bg-primary-light/30 backdrop-blur-sm border border-primary/10">
                     {/* Questions */}
                     <div className="space-y-0.5">
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
                         <Target className="h-3.5 w-3.5" />
                         <span className="text-xs font-medium uppercase tracking-wide">Questions</span>
                       </div>
                       <p className="text-xl font-bold text-primary-dark">
                         {item.totalNumberOfQuestions}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs">
                         +{item.totalQuestionsWithBuffer - item.totalNumberOfQuestions} buffer
                       </p>
                     </div>
 
                     {/* Duration */}
                     <div className="space-y-0.5">
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
                         <Clock className="h-3.5 w-3.5" />
                         <span className="text-xs font-medium uppercase tracking-wide">Duration</span>
                       </div>
                       <p className="text-xl font-bold text-info-dark">
                         {Math.ceil((new Date(item.endDatetime).getTime() - new Date(item.startDatetime).getTime()) / (1000 * 60 * 60 * 24))}
                       </p>
-                      <p className="text-xs text-muted-foreground">days</p>
+                      <p className="text-xs">days</p>
                     </div>
 
                     {/* Start Date */}
                     <div className="space-y-0.5">
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
                         <Calendar className="h-3.5 w-3.5" />
                         <span className="text-xs font-medium uppercase tracking-wide">Starts</span>
                       </div>
@@ -363,7 +362,7 @@ const Page = (props: Props) => {
                           day: 'numeric' 
                         })}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs">
                         {new Date(item.startDatetime).toLocaleTimeString('en-US', { 
                           hour: '2-digit', 
                           minute: '2-digit' 
@@ -373,7 +372,7 @@ const Page = (props: Props) => {
 
                     {/* End Date */}
                     <div className="space-y-0.5">
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
                         <Clock className="h-3.5 w-3.5" />
                         <span className="text-xs font-medium uppercase tracking-wide">Ends</span>
                       </div>
@@ -383,7 +382,7 @@ const Page = (props: Props) => {
                           day: 'numeric' 
                         })}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs">
                         {new Date(item.endDatetime).toLocaleTimeString('en-US', { 
                           hour: '2-digit', 
                           minute: '2-digit' 
@@ -402,7 +401,7 @@ const Page = (props: Props) => {
                             {getTimeRemaining(item.endDatetime)}
                           </span>
                         </div>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs">
                           Closes {new Date(item.endDatetime).toLocaleDateString('en-US', { 
                             month: 'short', 
                             day: 'numeric',
@@ -433,7 +432,7 @@ const Page = (props: Props) => {
                           <p className="text-sm font-medium text-foreground">
                             Assessment Completed
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs">
                             Submitted on {formatDate(item.updatedAt)}
                           </p>
                         </div>
@@ -452,7 +451,7 @@ const Page = (props: Props) => {
                           <p className="text-sm font-medium text-foreground">
                             Opens in {Math.ceil((new Date(item.startDatetime).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs">
                             {formatDate(item.startDatetime)}
                           </p>
                         </div>
