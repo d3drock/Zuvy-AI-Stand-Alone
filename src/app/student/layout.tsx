@@ -16,13 +16,19 @@ export default function RootLayout({
   const roleFromPath = pathname.split("/")[1]?.toLowerCase() || "";
   const userRole = user?.rolesList?.[0]?.toLowerCase() || "";
 
-  if(!(pathname.startsWith('/student') && userRole === 'student' )) {
-    return <UnauthorizedPage />
+  if (user?.rolesList?.length === 0) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+        </div>
+      </div>
+    );
   }
 
-  return (
-    <div className="font-body">
-      {children}
-    </div>
-  );
+  if (!(pathname.startsWith("/student") && userRole === "student")) {
+    return <UnauthorizedPage />;
+  }
+
+  return <div className="font-body">{children}</div>;
 }
