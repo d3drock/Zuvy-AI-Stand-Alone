@@ -21,7 +21,7 @@ import { useBootcamp } from '@/lib/hooks/useBootcamp';
 export default function AssessmentManagementPage() {
   const [selectedBootcampId, setSelectedBootcampId] = useState<number | null>(null);
   
-  const { assessment: getAssessments, loading, error } = useAiAssessment({ 
+  const { assessment: getAssessments, loading, error , refetch } = useAiAssessment({ 
     bootcampId: selectedBootcampId 
   });
   const { bootcamps, loading: bootcampsLoading } = useBootcamp();
@@ -287,6 +287,7 @@ export default function AssessmentManagementPage() {
         onOpenChange={setEditorOpen}
         onSave={handleSaveAssessment}
         mode={editorMode}
+        refetch={refetch}
         bootcamps={bootcamps}
         bootcampsLoading={bootcampsLoading}
       />

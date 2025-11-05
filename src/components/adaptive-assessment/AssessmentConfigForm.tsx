@@ -100,6 +100,7 @@ interface AssessmentConfigFormProps {
   mode: 'create' | 'edit';
   bootcamps: Bootcamp[];
   bootcampsLoading: boolean;
+  refetch: () => void
 }
 
 export function AssessmentConfigForm({
@@ -109,6 +110,7 @@ export function AssessmentConfigForm({
   mode,
   bootcamps,
   bootcampsLoading,
+  refetch,
 }: AssessmentConfigFormProps) {
   const { toast } = useToast();
   const [formData, setFormData] = useState<AssessmentFormData>({
@@ -270,6 +272,8 @@ export function AssessmentConfigForm({
     try {
       // await api.post('/content/generate-mcqs', dataToSave);
       await api.post('/ai-assessment', dataToSave);
+      refetch()
+
       // await api.post('/ai-assessment/generate/all', { aiAssessmentId: assessmentId });
       setLoading(false);
     }
