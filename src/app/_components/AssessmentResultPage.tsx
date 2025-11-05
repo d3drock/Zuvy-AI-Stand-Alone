@@ -50,9 +50,9 @@ export default function AssessmentResultsPage({assessmentId}: {assessmentId: str
       };
     }
 
-    // Determine if answer is correct by checking if explanation contains "correct"
-    const correctAnswers = evaluations.filter(q => 
-      q.explanation?.toLowerCase().includes('the answer is correct')
+    // Determine if answer is correct by comparing selectedAnswerByStudent with correctOptionId
+    const correctAnswers = evaluations.filter(item => 
+      item.questionEvaluation.selectedAnswerByStudent === item.correctOptionId
     ).length;
     
     const totalQuestions = evaluations.length;
@@ -61,8 +61,9 @@ export default function AssessmentResultsPage({assessmentId}: {assessmentId: str
 
     // Group by topic
     const topicMap = new Map<string, { correct: number; total: number }>();
-    evaluations.forEach(q => {
-      const isCorrect = q.explanation?.toLowerCase().includes('the answer is correct');
+    evaluations.forEach(item => {
+      const q = item.questionEvaluation;
+      const isCorrect = q.selectedAnswerByStudent === item.correctOptionId;
       const existing = topicMap.get(q.topic) || { correct: 0, total: 0 };
       topicMap.set(q.topic, {
         correct: existing.correct + (isCorrect ? 1 : 0),
@@ -84,9 +85,9 @@ export default function AssessmentResultsPage({assessmentId}: {assessmentId: str
       passed: score >= passingScore,
       passingScore,
       topicPerformance,
-      summary: evaluations[0]?.summary || '',
-      recommendations: evaluations[0]?.recommendations || '',
-      language: evaluations[0]?.language || 'Programming',
+      summary: evaluations[0]?.questionEvaluation.summary || '',
+      recommendations: evaluations[0]?.questionEvaluation.recommendations || '',
+      language: evaluations[0]?.questionEvaluation.language || 'Programming',
     };
   }, [evaluations]);
 
@@ -162,7 +163,7 @@ export default function AssessmentResultsPage({assessmentId}: {assessmentId: str
     yPosition += 7;
     doc.text(`Assessment: ${stats.language}`, 20, yPosition);
     yPosition += 7;
-    doc.text(`Date: ${formatDate(evaluations[0]?.createdAt || new Date().toISOString())}`, 20, yPosition);
+    doc.text(`Date: ${formatDate(evaluations[0]?.questionEvaluation.createdAt || new Date().toISOString())}`, 20, yPosition);
     yPosition += 15;
 
     // Score Summary Box
@@ -300,7 +301,10 @@ export default function AssessmentResultsPage({assessmentId}: {assessmentId: str
     doc.text('Detailed Question Review', 20, yPosition);
     yPosition += 10;
 
-    evaluations.forEach((q, index) => {
+    evaluations.forEach((item, index) => {
+      const q = item.questionEvaluation;
+      const isCorrect = q.selectedAnswerByStudent === item.correctOptionId;
+      
       if (yPosition > pageHeight - 80) {
         doc.addPage();
         yPosition = 20;
@@ -317,7 +321,7 @@ export default function AssessmentResultsPage({assessmentId}: {assessmentId: str
       const badgeWidth = 20;
       const badgeHeight = 6;
       
-      if (q.status === 'correct') {
+      if (isCorrect) {
         doc.setFillColor(...colors.success);
       } else {
         doc.setFillColor(...colors.destructive);
@@ -325,7 +329,7 @@ export default function AssessmentResultsPage({assessmentId}: {assessmentId: str
       doc.roundedRect(badgeX, yPosition - 4, badgeWidth, badgeHeight, 2, 2, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(8);
-      doc.text(q.status === 'correct' ? 'CORRECT' : 'INCORRECT', badgeX + badgeWidth / 2, yPosition, { align: 'center' });
+      doc.text(isCorrect ? 'CORRECT' : 'INCORRECT', badgeX + badgeWidth / 2, yPosition, { align: 'center' });
       
       yPosition += 8;
 
@@ -345,13 +349,12 @@ export default function AssessmentResultsPage({assessmentId}: {assessmentId: str
 
       // Options
       q.options.forEach((option) => {
-        const isCorrect = q.explanation?.toLowerCase().includes('the answer is correct') && 
-                         option.id === q.selectedAnswerByStudent;
+        const isThisCorrect = option.id === item.correctOptionId;
         const isSelected = option.id === q.selectedAnswerByStudent;
-        const isWrongAnswer = isSelected && !q.explanation?.toLowerCase().includes('the answer is correct');
+        const isWrongAnswer = isSelected && !isCorrect;
         
         doc.setFontSize(9);
-        if (isCorrect) {
+        if (isThisCorrect) {
           doc.setTextColor(...colors.success);
           doc.setFont('helvetica', 'bold');
         } else if (isWrongAnswer) {
@@ -362,15 +365,14 @@ export default function AssessmentResultsPage({assessmentId}: {assessmentId: str
           doc.setFont('helvetica', 'normal');
         }
         
-        const optionText = `${option.optionNumber}. ${option.optionText}${isSelected ? ' (Your Answer)' : ''}${isCorrect ? ' ✓' : ''}`;
+        const optionText = `${option.optionNumber}. ${option.optionText}${isSelected ? ' (Your Answer)' : ''}${isThisCorrect ? ' ✓' : ''}`;
         const optionLines = doc.splitTextToSize(optionText, pageWidth - 50);
         doc.text(optionLines, 25, yPosition);
         yPosition += optionLines.length * 4 + 2;
       });
 
       // Explanation for incorrect answers with muted background
-      const isIncorrect = !q.explanation?.toLowerCase().includes('the answer is correct');
-      if (isIncorrect && q.explanation) {
+      if (!isCorrect && q.explanation) {
         yPosition += 3;
         doc.setFillColor(...colors.mutedLight);
         doc.setDrawColor(...colors.border);
@@ -466,7 +468,7 @@ export default function AssessmentResultsPage({assessmentId}: {assessmentId: str
               {stats.language} Assessment
             </p>
             <p className="text-body2 text-muted-foreground">
-              Completed on {formatDate(evaluations[0].createdAt)}
+              Completed on {formatDate(evaluations[0].questionEvaluation.createdAt)}
             </p>
           </div>
           <Button variant="outline" onClick={handleDownloadReport} className="gap-2">
@@ -674,8 +676,9 @@ export default function AssessmentResultsPage({assessmentId}: {assessmentId: str
         {/* Question Review */}
         <TabsContent value="review">
           <Accordion type="single" collapsible className="w-full">
-            {evaluations.map((q, index) =>{
-              const isCorrect = q.explanation?.toLowerCase().includes('the answer is correct');
+            {evaluations.map((item, index) => {
+              const q = item.questionEvaluation;
+              const isCorrect = q.selectedAnswerByStudent === item.correctOptionId;
               
               return(
                 <AccordionItem key={q.id} value={`question-${q.id}`}>
@@ -718,8 +721,8 @@ export default function AssessmentResultsPage({assessmentId}: {assessmentId: str
                       <div className="space-y-2">
                         {q.options.map((option) => {
                           const isSelected = option.id === q.selectedAnswerByStudent;
-                          const isThisCorrect = isCorrect && isSelected;
-                          const isThisWrong = !isCorrect && isSelected;
+                          const isThisCorrect = option.id === item.correctOptionId;
+                          const isThisWrong = isSelected && !isCorrect;
                           
                           return (
                             <div

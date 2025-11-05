@@ -29,6 +29,7 @@ import {
   QuestionSubmission,
 } from "@/types/adaptive-assessment";
 import { Toaster } from "@/components/ui/toaster";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 interface AssessmentSessionPageProps {
   sessionId: string;
@@ -534,39 +535,48 @@ export default function AssessmentSessionPage({
                 <>
                   {/* <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
                   Submitting... */}
-                  <Dialog
-                    open={isSubmitting}
-                    onOpenChange={(val) => setIsSubmitting(val)}
-                  >
-                    <DialogContent className="max-w-lg">
-                      <div className="flex flex-col items-center justify-center p-8">
-                        <div className="doc-loader">
-                          <div className="document">
-                            <div className="doc-lines">
-                              <div className="doc-line"></div>
-                              <div className="doc-line"></div>
-                              <div className="doc-line"></div>
-                            </div>
-                          </div>
-                          <div className="sparkles">
-                            <div className="sparkle"></div>
-                            <div className="sparkle"></div>
-                            <div className="sparkle"></div>
-                            <div className="sparkle"></div>
-                          </div>
-                        </div>
-                        <div className="pt-3 text-lg font-medium">
-                          Please wait. Your assessment is being reviewed
-                          <span className="loading-dots"></span>
-                        </div>
-                      </div>
-                      {/* <DialogFooter>
-                        <Button variant="outline" onClick={() => setLoading(false)}>
-                          Go Back
-                        </Button>
-                      </DialogFooter> */}
-                    </DialogContent>
-                  </Dialog>
+                <Dialog
+  open={isSubmitting}
+  onOpenChange={(val) => setIsSubmitting(val)}
+>
+  <DialogContent className="max-w-lg">
+    {/* Visually hidden title for accessibility */}
+    <VisuallyHidden>
+      <DialogTitle>Reviewing Assessment</DialogTitle>
+    </VisuallyHidden>
+
+    <div className="flex flex-col items-center justify-center p-8">
+      <div className="doc-loader">
+        <div className="document">
+          <div className="doc-lines">
+            <div className="doc-line"></div>
+            <div className="doc-line"></div>
+            <div className="doc-line"></div>
+          </div>
+        </div>
+        <div className="sparkles">
+          <div className="sparkle"></div>
+          <div className="sparkle"></div>
+          <div className="sparkle"></div>
+          <div className="sparkle"></div>
+        </div>
+      </div>
+
+      <div className="pt-3 text-lg font-medium text-center">
+        Please wait. Your assessment is being reviewed
+        <span className="loading-dots"></span>
+      </div>
+    </div>
+
+    {/* Optional Footer — can be uncommented if needed */}
+    {/* <DialogFooter>
+      <Button variant="outline" onClick={() => setIsSubmitting(false)}>
+        Go Back
+      </Button>
+    </DialogFooter> */}
+  </DialogContent>
+</Dialog>
+
                 </>
               ) : (
                 <>

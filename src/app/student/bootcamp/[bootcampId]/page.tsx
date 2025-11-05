@@ -1,6 +1,6 @@
 "use client";
 
-import { useAiAssessment } from '@/lib/hooks/useAiAssessment';
+import { useStudentAssessmentsByBootcamp } from '@/lib/hooks/useStudentAssessmentsByBootcamp';
 import { useParams, useRouter } from 'next/navigation';
 import React from 'react';
 import { Card } from '@/components/ui/card';
@@ -17,12 +17,14 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { getUser } from '@/store/store';
 
 type Props = {}
 
 const Page = (props: Props) => {
   const router = useRouter();
   const { bootcampId } = useParams();
+  const { user } = getUser();
 
   if (!bootcampId) {
     return (
@@ -40,12 +42,17 @@ const Page = (props: Props) => {
     );
   }
 
-  const { assessment, loading, error } = useAiAssessment({ 
+  const { assessments, loading, error } = useStudentAssessmentsByBootcamp({ 
+    studentId: parseInt(user.id),
     bootcampId: Number(bootcampId) 
   });
 
   const handleStartAssessment = (assessmentId: number) => {
     router.push(`/student/studentAssessment/${assessmentId}`);
+  };
+
+  const handleViewResults = (assessmentId: number) => {
+    router.push(`/student/studentAssessment/studentResults?assessmentId=${assessmentId}`);
   };
 
   const formatDate = (dateString: string) => {
@@ -58,14 +65,22 @@ const Page = (props: Props) => {
     });
   };
 
-  const isAssessmentAvailable = (startDate: string, endDate: string) => {
+  const isAssessmentAvailable = (startDate: string, endDate: string, status: number) => {
+    // If already submitted (status = 1), not available to take again
+    if (status === 1) return false;
+    
     const now = new Date();
     const start = new Date(startDate);
     const end = new Date(endDate);
     return now >= start && now <= end;
   };
 
-  const getAssessmentStatus = (startDate: string, endDate: string) => {
+  const getAssessmentStatus = (startDate: string, endDate: string, status: number) => {
+    // Check if submitted first
+    if (status === 1) {
+      return { label: 'Submitted', variant: 'default' as const, color: 'text-success' };
+    }
+    
     const now = new Date();
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -91,13 +106,14 @@ const Page = (props: Props) => {
   };
 
   // Calculate stats
-  const totalAssessments = assessment?.length || 0;
-  const activeAssessments = assessment?.filter(a => 
-    isAssessmentAvailable(a.startDatetime, a.endDatetime)
+  const totalAssessments = assessments?.length || 0;
+  const activeAssessments = assessments?.filter(a => 
+    isAssessmentAvailable(a.startDatetime, a.endDatetime, a.status)
   ).length || 0;
-  const totalQuestions = assessment?.reduce((sum, a) => sum + a.totalNumberOfQuestions, 0) || 0;
+  const submittedAssessments = assessments?.filter(a => a.status === 1).length || 0;
+  const totalQuestions = assessments?.reduce((sum, a) => sum + a.totalNumberOfQuestions, 0) || 0;
   const uniqueTopics = new Set(
-    assessment?.flatMap(a => Object.keys(a.topics || {})) || []
+    assessments?.flatMap(a => Object.keys(a.topics || {})) || []
   );
 
   return (
@@ -124,9 +140,9 @@ const Page = (props: Props) => {
           </div>
         </Card>
 
-        <Card className="p-4 border-l-4 border-l-success">
+        <Card className="p-4 border-l-4 border-l-warning">
           <div className="flex items-center gap-3">
-            <CheckCircle2 className="h-5 w-5 text-success" />
+            <Clock className="h-5 w-5 text-warning" />
             <div>
               <p className="text-body2 text-muted-foreground">Active</p>
               <p className="text-h5 font-semibold">{activeAssessments}</p>
@@ -134,12 +150,12 @@ const Page = (props: Props) => {
           </div>
         </Card>
 
-        <Card className="p-4 border-l-4 border-l-warning">
+        <Card className="p-4 border-l-4 border-l-success">
           <div className="flex items-center gap-3">
-            <Target className="h-5 w-5 text-warning" />
+            <CheckCircle2 className="h-5 w-5 text-success" />
             <div>
-              <p className="text-body2 text-muted-foreground">Total Questions</p>
-              <p className="text-h5 font-semibold">{totalQuestions}</p>
+              <p className="text-body2 text-muted-foreground">Submitted</p>
+              <p className="text-h5 font-semibold">{submittedAssessments}</p>
             </div>
           </div>
         </Card>
@@ -177,7 +193,7 @@ const Page = (props: Props) => {
               {error}
             </p>
           </Card>
-        ) : !assessment || assessment.length === 0 ? (
+        ) : !assessments || assessments.length === 0 ? (
           <Card className="p-8 text-center">
             <BookOpen className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
             <h3 className="font-heading text-body1 font-semibold mb-1">
@@ -188,9 +204,10 @@ const Page = (props: Props) => {
             </p>
           </Card>
         ) : (
-          assessment.map((item) => {
-            const status = getAssessmentStatus(item.startDatetime, item.endDatetime);
-            const isAvailable = isAssessmentAvailable(item.startDatetime, item.endDatetime);
+          assessments.map((item) => {
+            const status = getAssessmentStatus(item.startDatetime, item.endDatetime, item.status);
+            const isAvailable = isAssessmentAvailable(item.startDatetime, item.endDatetime, item.status);
+            const isSubmitted = item.status === 1;
             
             return (
               <div
@@ -202,7 +219,9 @@ const Page = (props: Props) => {
                 
                 {/* Status Indicator Bar */}
                 <div className={`absolute top-0 left-0 right-0 h-1 ${
-                  isAvailable 
+                  isSubmitted
+                    ? 'bg-gradient-to-r from-success via-success-dark to-success'
+                    : isAvailable 
                     ? 'bg-gradient-to-r from-secondary via-secondary-dark to-success' 
                     : new Date() < new Date(item.startDatetime)
                     ? 'bg-gradient-to-r from-info via-info-dark to-info'
@@ -227,7 +246,9 @@ const Page = (props: Props) => {
                         {/* Status Badge */}
                         <div className={`
                           px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide
-                          ${isAvailable 
+                          ${isSubmitted
+                            ? 'bg-success/20 text-success border border-success/30'
+                            : isAvailable 
                             ? 'bg-secondary/20 text-secondary border border-secondary/30' 
                             : new Date() < new Date(item.startDatetime)
                             ? 'bg-info/20 text-info border border-info/30'
@@ -258,36 +279,47 @@ const Page = (props: Props) => {
 
                     {/* CTA Button */}
                     <div className="flex-shrink-0">
-                      <Button
-                        onClick={() => handleStartAssessment(item.id)}
-                        disabled={!isAvailable}
-                        size="default"
-                        className={`
-                          min-w-[130px] h-10 text-sm font-semibold
-                          ${isAvailable 
-                            ? 'bg-gradient-to-r from-secondary to-secondary-dark hover:from-secondary-dark hover:to-secondary shadow-md shadow-secondary/20 hover:shadow-lg hover:shadow-secondary/30' 
-                            : 'bg-muted  cursor-not-allowed'
-                          }
-                          transition-all duration-300 group/btn
-                        `}
-                      >
-                        {isAvailable ? (
-                          <>
-                            <Play className="h-4 w-4 mr-1.5 group-hover/btn:scale-110 transition-transform" />
-                            <span>Start Now</span>
-                          </>
-                        ) : new Date() < new Date(item.startDatetime) ? (
-                          <>
-                            <Clock className="h-4 w-4 mr-1.5" />
-                            <span>Coming Soon</span>
-                          </>
-                        ) : (
-                          <>
-                            <AlertCircle className="h-4 w-4 mr-1.5" />
-                            <span>Ended</span>
-                          </>
-                        )}
-                      </Button>
+                      {isSubmitted ? (
+                        <Button
+                          onClick={() => handleViewResults(item.id)}
+                          size="default"
+                          className="min-w-[130px] h-10 text-sm font-semibold bg-gradient-to-r from-success to-success-dark hover:from-success-dark hover:to-success shadow-md shadow-success/20 hover:shadow-lg hover:shadow-success/30 transition-all duration-300 group/btn"
+                        >
+                          <CheckCircle2 className="h-4 w-4 mr-1.5 group-hover/btn:scale-110 transition-transform" />
+                          <span>View Results</span>
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={() => handleStartAssessment(item.id)}
+                          disabled={!isAvailable}
+                          size="default"
+                          className={`
+                            min-w-[130px] h-10 text-sm font-semibold
+                            ${isAvailable 
+                              ? 'bg-gradient-to-r from-secondary to-secondary-dark hover:from-secondary-dark hover:to-secondary shadow-md shadow-secondary/20 hover:shadow-lg hover:shadow-secondary/30' 
+                              : 'bg-muted cursor-not-allowed'
+                            }
+                            transition-all duration-300 group/btn
+                          `}
+                        >
+                          {isAvailable ? (
+                            <>
+                              <Play className="h-4 w-4 mr-1.5 group-hover/btn:scale-110 transition-transform" />
+                              <span>Start Now</span>
+                            </>
+                          ) : new Date() < new Date(item.startDatetime) ? (
+                            <>
+                              <Clock className="h-4 w-4 mr-1.5" />
+                              <span>Coming Soon</span>
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle className="h-4 w-4 mr-1.5" />
+                              <span>Ended</span>
+                            </>
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </div>
 
@@ -361,7 +393,7 @@ const Page = (props: Props) => {
                   </div>
 
                   {/* Time Remaining Bar - Only for Active */}
-                  {isAvailable && (
+                  {isAvailable && !isSubmitted && (
                     <div className="mt-3 p-3 rounded-md bg-accent-light/50 border border-accent/20">
                       <div className="flex items-center justify-between mb-1.5">
                         <div className="flex items-center gap-2">
@@ -390,8 +422,27 @@ const Page = (props: Props) => {
                     </div>
                   )}
 
+                  {/* Submitted Indicator */}
+                  {isSubmitted && (
+                    <div className="mt-3 p-3 rounded-md bg-success-light border border-success/10">
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-8 w-8 rounded-full bg-success/20 flex items-center justify-center flex-shrink-0">
+                          <CheckCircle2 className="h-4 w-4 text-success" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            Assessment Completed
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Submitted on {formatDate(item.updatedAt)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Upcoming Indicator */}
-                  {!isAvailable && new Date() < new Date(item.startDatetime) && (
+                  {!isAvailable && !isSubmitted && new Date() < new Date(item.startDatetime) && (
                     <div className="mt-3 p-3 rounded-md bg-info-light border border-info/10">
                       <div className="flex items-center gap-2.5">
                         <div className="h-8 w-8 rounded-full bg-info/20 flex items-center justify-center flex-shrink-0">

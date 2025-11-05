@@ -168,9 +168,9 @@ export default function StudentDashboard() {
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-heading text-body1 font-semibold">
+                        <h1 className="font-heading text-xl text-body1 font-semibold">
                           {bootcamp.name}
-                        </h3>
+                        </h1>
                         <Badge variant="outline" className="bg-primary/10 text-primary">
                           In Progress
                         </Badge>

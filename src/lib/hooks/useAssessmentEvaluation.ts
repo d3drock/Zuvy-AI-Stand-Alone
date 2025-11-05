@@ -13,11 +13,12 @@ export interface QuestionOption {
 export interface EvaluationQuestion {
   id: number
   aiAssessmentId: number
+  questionId: number
   question: string
   topic: string
   difficulty: string
   options: QuestionOption[]
-  selectedAnswerByStudent: number // This is now the option ID, not the option number
+  selectedAnswerByStudent: number // Option ID selected by student
   language: string
   status: string | null
   explanation: string
@@ -28,7 +29,12 @@ export interface EvaluationQuestion {
   updatedAt: string
 }
 
-export type AssessmentEvaluationApiResponse = EvaluationQuestion[]
+export interface AssessmentEvaluationItem {
+  questionEvaluation: EvaluationQuestion
+  correctOptionId: number // The correct answer's option ID
+}
+
+export type AssessmentEvaluationApiResponse = AssessmentEvaluationItem[]
 
 interface UseAssessmentEvaluationParams {
   userId: number | null
@@ -37,7 +43,7 @@ interface UseAssessmentEvaluationParams {
 }
 
 interface UseAssessmentEvaluationReturn {
-  evaluations: EvaluationQuestion[]
+  evaluations: AssessmentEvaluationItem[]
   loading: boolean
   error: string | null
   refetch: () => Promise<void>
@@ -49,7 +55,7 @@ export function useAssessmentEvaluation({
   assessmentId,
   enabled = true 
 }: UseAssessmentEvaluationParams): UseAssessmentEvaluationReturn {
-  const [evaluations, setEvaluations] = useState<EvaluationQuestion[]>([])
+  const [evaluations, setEvaluations] = useState<AssessmentEvaluationItem[]>([])
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
 

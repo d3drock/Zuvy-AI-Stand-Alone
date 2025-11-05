@@ -137,12 +137,14 @@ const MainLayout = ({ children }: MainLayoutProps) => {
 
           <Button
             variant="ghost"
-            size="icon"
-            className="ml-auto text-red-500 hover:text-white hover:bg-red-500"
+            className="flex hover:text-white hover:bg-red-500 items-center gap-2 "
             title="Logout"
             aria-label="Logout"
             onClick={Logout}
           >
+            <span>
+            Logout
+            </span>
             <LogOut className="h-5 w-5" />
           </Button>
         </div>

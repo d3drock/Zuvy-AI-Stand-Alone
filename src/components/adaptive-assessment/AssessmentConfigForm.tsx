@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
+
 import {
   Popover,
   PopoverContent,
@@ -608,22 +610,29 @@ export function AssessmentConfigForm({
       </DialogContent>
     </Dialog>
      {/* Loading / Generating Modal */}
-    <Dialog open={loading} onOpenChange={(val) => setLoading(val)}>
-      <DialogContent className="max-w-lg">
-        <div className="flex flex-col items-center justify-center py-8">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          <h3 className="mt-4 text-lg font-semibold">Generating MCQs</h3>
-          <p className="mt-2 text-sm text-muted-foreground text-center px-4">
-            AI is creating multiple choice questions. This may take a few minutes. You can cancel to stop this operation.
-          </p>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setLoading(false)}>
-            Cancel
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+<Dialog open={loading} onOpenChange={(val) => setLoading(val)}>
+  <DialogContent className="max-w-lg">
+    {/* Visually hidden title for accessibility */}
+    <VisuallyHidden>
+      <DialogTitle>Generating MCQs</DialogTitle>
+    </VisuallyHidden>
+
+    <div className="flex flex-col items-center justify-center py-8">
+      <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <h3 className="mt-4 text-lg font-semibold">Generating MCQs</h3>
+      <p className="mt-2 text-sm text-muted-foreground text-center px-4">
+        AI is creating multiple choice questions. This may take a few minutes.
+        You can cancel to stop this operation.
+      </p>
+    </div>
+
+    <DialogFooter>
+      <Button variant="outline" onClick={() => setLoading(false)}>
+        Cancel
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
     </>
   );
 }
