@@ -372,7 +372,7 @@ export default function AssessmentResultsPage({assessmentId}: {assessmentId: str
       });
 
       // Explanation for incorrect answers with muted background
-      if (!isCorrect && q.explanation) {
+      if (q.explanation) {
         yPosition += 3;
         doc.setFillColor(...colors.mutedLight);
         doc.setDrawColor(...colors.border);
@@ -383,7 +383,9 @@ export default function AssessmentResultsPage({assessmentId}: {assessmentId: str
         
         doc.setFontSize(9);
         doc.setFont('helvetica', 'italic');
-        doc.setTextColor(...colors.muted);
+        // doc.setTextColor(...colors.muted);
+        doc.setTextColor(0, 0, 0); // Set to black
+
         doc.text('Explanation:', 25, yPosition + 6);
         doc.setFont('helvetica', 'normal');
         doc.text(explanationBox, 25, yPosition + 11);
@@ -751,8 +753,8 @@ export default function AssessmentResultsPage({assessmentId}: {assessmentId: str
                         })}
                       </div>
 
-                      {!isCorrect && q.explanation && (
-                        <div className="p-4 rounded-lg bg-muted">
+                      { q.explanation && (
+                        <div className={`p-4 rounded-lg ${isCorrect ? 'bg-primary-light' : 'bg-destructive/60'}`}>
                           <p className="text-sm font-medium mb-2">Explanation:</p>
                           <p className="text-sm">{q.explanation}</p>
                         </div>
