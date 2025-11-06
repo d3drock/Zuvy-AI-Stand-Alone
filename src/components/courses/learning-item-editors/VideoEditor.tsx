@@ -98,7 +98,6 @@ export function VideoEditor({
       handleInputChange('fileUrl', fileUrl);
       setPreviewUrl(fileUrl);
 
-      console.log('Video file uploaded:', file.name, file.size, file.type);
     }
   };
 

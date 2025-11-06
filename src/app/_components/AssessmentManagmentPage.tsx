@@ -90,7 +90,6 @@ export default function AssessmentManagementPage() {
     });
   };
 
-  console.log(getAssessments)
   return (
     <div className="w-full px-6 py-8">
       {/* Header */}

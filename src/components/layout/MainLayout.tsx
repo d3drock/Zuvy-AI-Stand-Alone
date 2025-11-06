@@ -55,7 +55,6 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   ];
 
   const Logout = async () => {
-    console.log("Logging out...");
     const mainUrl = process.env.NEXT_PUBLIC_MAIN_URL;
 
     try {

@@ -239,11 +239,6 @@ export default function AssessmentSessionPage({
   const handleSubmitAssessment = async () => {
     if (!session) return;
 
-    console.log("=== DEBUG: Starting submission ===");
-    console.log("Selected Answers:", selectedAnswers);
-    console.log("Question Mapping:", questionMapping);
-    console.log("API Questions:", apiQuestions);
-
     // Validate that at least one question has been answered
     if (selectedAnswers.size === 0) {
       toast({
@@ -263,12 +258,8 @@ export default function AssessmentSessionPage({
       )
         .filter(([_, selectedOptionIds]) => selectedOptionIds.length > 0) // Only answered questions
         .map(([questionIndex, selectedOptionIds]) => {
-          console.log(
-            `Processing question ${questionIndex}:`,
-            selectedOptionIds
-          );
+
           const originalQuestion = questionMapping.get(questionIndex);
-          console.log("Original question:", originalQuestion);
 
           if (!originalQuestion) {
             console.warn(
@@ -281,7 +272,6 @@ export default function AssessmentSessionPage({
           const selectedOptionNumber = parseInt(
             selectedOptionIds[0].split("-")[2]
           );
-          console.log("Selected option number:", selectedOptionNumber);
 
           // Find the full option object for the selected option number
           const selectedOptionObj = originalQuestion.options.find(
@@ -306,8 +296,6 @@ export default function AssessmentSessionPage({
             language: originalQuestion.language,
           };
 
-          console.log("Prepared answer:", answer);
-
           return answer;
         })
         .filter((answer): answer is AssessmentAnswerPayload => answer !== null);
@@ -317,12 +305,8 @@ export default function AssessmentSessionPage({
         aiAssessmentId: +sessionId,
       };
 
-      console.log("Final payload:", JSON.stringify(payload, null, 2));
-
       // Call the API
       const response = await api.post("/ai-assessment/submit", payload);
-
-      console.log("Assessment submitted successfully:", response.data);
 
       // Update session with submissions
       const submissions: QuestionSubmission[] = [];

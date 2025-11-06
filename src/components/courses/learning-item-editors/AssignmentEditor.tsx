@@ -79,7 +79,6 @@ export function AssignmentEditor({ initialData, onSave, onCancel, mode }: Assign
       const fileUrl = URL.createObjectURL(file);
       handleChange('instructionFileUrl', fileUrl);
 
-      console.log('PDF instructions uploaded:', file.name, file.size, file.type);
     }
   };
 

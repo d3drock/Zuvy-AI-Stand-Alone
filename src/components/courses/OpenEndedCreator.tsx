@@ -33,7 +33,6 @@ const OpenEndedCreator = ({ onSave }: OpenEndedCreatorProps) => {
   };
 
   const handleSave = () => {
-    console.log('Saving open ended question:', questionData);
     onSave();
   };
 

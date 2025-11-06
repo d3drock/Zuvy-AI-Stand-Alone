@@ -48,7 +48,6 @@ export function useAiAssessment(params?: UseAiAssessmentParams): UseAiAssessment
         : '/ai-assessment';
       
       const res = await api.get(url);
-      console.log("Fetched AI assessment:", res.data);
       setAssessment(res.data);
     } catch (err: any) {
       console.error("Error fetching AI assessment:", err);

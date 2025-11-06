@@ -26,7 +26,6 @@ const CreateTopicModal = ({ isOpen, onClose, onTopicCreated }: CreateTopicModalP
 
   const handleCreate = () => {
     if (topicData.name.trim()) {
-      console.log('Creating new topic:', topicData);
       onTopicCreated(topicData.name);
       setTopicData({ name: '', description: '' });
     }

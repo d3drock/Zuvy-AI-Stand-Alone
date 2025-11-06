@@ -64,7 +64,6 @@ const MCQCreator = ({ onSave }: MCQCreatorProps) => {
   };
 
   const handleSave = () => {
-    console.log('Saving MCQ:', { questionData, options });
     onSave();
   };
 

@@ -40,7 +40,6 @@ const OpenEndedCreatorModal = ({ isOpen, onClose }: OpenEndedCreatorModalProps) 
   };
 
   const handleCreateQuestion = () => {
-    console.log('Creating open ended question:', questionData);
     // Here you would handle the actual creation logic
     onClose();
     // Reset form

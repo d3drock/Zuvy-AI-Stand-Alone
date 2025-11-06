@@ -179,7 +179,6 @@ const MCQCreatorModal = ({ isOpen, onClose }: MCQCreatorModalProps) => {
 
   const handleFileUpload = (file: File) => {
     setBulkFile(file);
-    console.log('File uploaded:', file.name);
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -244,7 +243,6 @@ const MCQCreatorModal = ({ isOpen, onClose }: MCQCreatorModalProps) => {
   };
 
   const handleCreateQuestions = () => {
-    console.log('Creating questions...');
     // Handle question creation logic here
     onClose();
   };
