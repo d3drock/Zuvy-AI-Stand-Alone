@@ -30,5 +30,9 @@ export default function RootLayout({
     return <UnauthorizedPage />;
   }
 
-  return <div className="font-body">{children}</div>;
+  return <div className="font-body">
+    <MainLayout>
+    {children}
+    </MainLayout>
+    </div>;
 }
