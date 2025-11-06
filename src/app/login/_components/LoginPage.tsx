@@ -114,8 +114,6 @@ function LoginPage() {
   const firstRowCards = socialProofData.slice(0, 5);
   const secondRowCards = socialProofData.slice(5, 8);
 
-  console.log("I am in login page");
-
   // Student Card Component
   const StudentCard = ({
     name,
@@ -180,8 +178,6 @@ function LoginPage() {
       };
 
       const response = await api.post<AuthResponse>(`/auth/login`, googleData);
-
-      console.log("Google login response:", response.data);
 
       // Handle your backend response
       if (response.data.access_token) {
@@ -254,7 +250,6 @@ function LoginPage() {
     // Handle existing token logic and redirects
     const urlParams = new URLSearchParams(window.location.search);
     let redirectedUrl = localStorage.getItem("redirectedUrl");
-    console.log("Redirected URL from localStorage:", redirectedUrl);
 
     if (window.location.href.includes("route")) {
       const route = urlParams.get("route");
@@ -265,7 +260,6 @@ function LoginPage() {
   }, [router]);
 
   useEffect(() => {
-    console.log("user", user);
     if (user.rolesList && user.rolesList[0] === "student") {
       router.push("/student");
     } else if (

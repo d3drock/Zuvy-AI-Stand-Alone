@@ -140,7 +140,6 @@ const StudentsTab = ({ courseId, initialBatchFilter }: StudentsTabProps) => {
   };
 
   const handleBulkUpload = async (data: { file: File; fileType: 'csv' | 'excel' | 'sheets' }) => {
-    console.log('Bulk upload:', data);
     setIsBulkUploadModalOpen(false);
   };
 

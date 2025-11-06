@@ -102,7 +102,6 @@ const BatchesTab = ({ courseId }: BatchesTabProps) => {
   };
 
   const handleFinishBatch = () => {
-    console.log('Creating batch:', newBatchData);
     setIsCreateModalOpen(false);
     setCurrentStep(1);
     setNewBatchData({

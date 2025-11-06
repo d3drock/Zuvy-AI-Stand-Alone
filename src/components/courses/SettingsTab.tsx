@@ -34,7 +34,6 @@ const SettingsTab = ({ courseId }: SettingsTabProps) => {
   };
 
   const handleSaveSettings = () => {
-    console.log('Saving settings:', settings);
     // Implementation would save to backend
     setIsSaved(true);
 
@@ -46,7 +45,6 @@ const SettingsTab = ({ courseId }: SettingsTabProps) => {
 
   const handleDeleteCourse = () => {
     if (deleteConfirmationText === courseName) {
-      console.log('Deleting course:', courseId);
       // Implementation would delete course
       setIsDeleteDialogOpen(false);
       setDeleteConfirmationText('');

@@ -102,7 +102,6 @@ export function ArticleEditor({
       const fileUrl = URL.createObjectURL(file);
       handleInputChange('fileUrl', fileUrl);
 
-      console.log('PDF file uploaded:', file.name, file.size, file.type);
     }
   };
 

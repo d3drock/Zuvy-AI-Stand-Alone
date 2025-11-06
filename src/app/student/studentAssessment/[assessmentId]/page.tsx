@@ -8,7 +8,6 @@ type Props = {}
 const Page = (props: Props) => {
 
   const param = useParams()
-  // console.log(param)
   const assessmentid =  param.assessmentId?.toString() || ''
 
 
